@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  name          String
+  client        String
+  reference     String
+  dueDate       DateTime?
+  product       String
+  productVersion String
+  owner         String
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  sourceDocuments SourceDocument[]
+  requirements  Requirement[]
+  evidenceDocuments EvidenceDocument[]
+  tasks         Task[]
+  auditEvents   AuditEvent[]
+}
+
+model SourceDocument {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  storedName  String
+  type        String
+  mimeType    String
+  extractedText String
+  uploadedAt  DateTime @default(now())
+  requirements Requirement[]
+  @@index([projectId])
+}
+
+model Requirement {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceDocumentId String?
+  sourceDocument SourceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  number        String
+  title         String
+  originalText  String
+  category      String
+  sourceLocation String
+  sourceFragment String
+  priority      String   @default("verplicht")
+  origin        String   @default("automatisch")
+  status        String   @default("niet beoordeeld")
+  notApplicable Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  matches       EvidenceMatch[]
+  assessments   Assessment[]
+  tasks         Task[]
+  auditEvents   AuditEvent[]
+  @@unique([projectId, number])
+  @@index([projectId, status])
+}
+
+model EvidenceDocument {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String
+  documentType   String
+  description    String   @default("")
+  organization   String   @default("")
+  product        String   @default("")
+  productVersion String   @default("")
+  environment    String   @default("")
+  owner          String   @default("")
+  issuedAt       DateTime?
+  expiresAt      DateTime?
+  confidentiality String  @default("intern")
+  tags           String   @default("")
+  fileName       String
+  storedName     String
+  mimeType       String
+  extractedText  String
+  uploadedAt     DateTime @default(now())
+  matches        EvidenceMatch[]
+  @@index([projectId])
+}
+
+model EvidenceMatch {
+  id              String   @id @default(cuid())
+  requirementId   String
+  requirement     Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  evidenceDocumentId String
+  evidenceDocument EvidenceDocument @relation(fields: [evidenceDocumentId], references: [id], onDelete: Cascade)
+  fragment        String
+  sourceLocation  String
+  score           Int
+  explanation     String
+  warnings        String   @default("")
+  proposalStatus  String   @default("niet beoordeeld")
+  createdAt       DateTime @default(now())
+  assessment      Assessment?
+  @@unique([requirementId, evidenceDocumentId])
+}
+
+model Assessment {
+  id            String   @id @default(cuid())
+  requirementId String
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  evidenceMatchId String? @unique
+  evidenceMatch EvidenceMatch? @relation(fields: [evidenceMatchId], references: [id], onDelete: SetNull)
+  status        String
+  draftAnswer   String   @default("")
+  notes         String   @default("")
+  owner         String   @default("")
+  deadline      DateTime?
+  approved      Boolean  @default(false)
+  assessedBy    String   @default("Lokale gebruiker")
+  assessedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Task {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirementId String?
+  requirement   Requirement? @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  title         String
+  owner         String
+  deadline      DateTime?
+  status        String   @default("open")
+  createdAt     DateTime @default(now())
+}
+
+model AuditEvent {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirementId String?
+  requirement   Requirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  action        String
+  entity        String
+  oldValue      String   @default("")
+  newValue      String   @default("")
+  user          String   @default("Lokale gebruiker")
+  createdAt     DateTime @default(now())
+  @@index([projectId, createdAt])
+}
+

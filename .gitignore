@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env*
+!.env.example
+prisma/dev.db*
+storage/uploads/
+playwright-report/
+test-results/
+coverage/
+*.log
+*.tsbuildinfo
+.codex-build/
+.codex-finalizer/
+.codex-output/
+.chart-data-*/

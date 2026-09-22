@@ -1,0 +1,3 @@
+Browsercheck beveiligingsnotitie
+
+Productiegegevens zijn in opslag versleuteld met AES-256. Verbindingen gebruiken TLS 1.3. Beheerdershandelingen worden twaalf maanden in een afgescheiden auditlog bewaard.

@@ -1,0 +1,6 @@
+De leverancier moet gegevens tijdens transport en opslag versleutelen.
+
+De opdrachtnemer dient beheerdershandelingen controleerbaar te loggen.
+
+De leverancier beschrijft alle subverwerkers en hun verwerkingslocatie.
+
