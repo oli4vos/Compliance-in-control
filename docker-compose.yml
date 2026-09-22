@@ -37,7 +37,7 @@ services:
       dockerfile: Dockerfile.web
     command: sh -c "npm run db:setup && npm run seed && npm run dev -- --hostname 0.0.0.0"
     environment:
-      DATABASE_URL: file:./dev.db
+      DATABASE_URL: file:/app/data/legacy.db
       PYTHON_API_URL: http://api:8000
     depends_on:
       api:
@@ -45,8 +45,10 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      - legacy_data:/app/data
       - uploads_data:/app/storage/uploads
 
 volumes:
   postgres_data:
+  legacy_data:
   uploads_data:

@@ -29,7 +29,7 @@ npm run dev:stack
 
 Open daarna [http://localhost:3000](http://localhost:3000). De interactieve Python-API-documentatie staat op [http://localhost:8000/docs](http://localhost:8000/docs). Docker Compose voert de Alembic-migratie uit en laadt het fictieve Waterdam-demodossier in beide tijdelijke datalagen.
 
-Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
+Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. PostgreSQL, tijdelijke legacydata en uploads blijven daardoor behouden bij een normale herbouw. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
 
 Stoppen kan met `Ctrl+C`; verwijder alleen de lokale containervolumes wanneer u bewust alle lokale PostgreSQL-data wilt wissen:
 

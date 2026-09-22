@@ -8,7 +8,7 @@
     "dev:stack": "docker compose up --build",
     "build": "next build",
     "start": "next start",
-    "db:setup": "mkdir -p prisma && touch prisma/dev.db && prisma generate && prisma db push",
+    "db:setup": "mkdir -p prisma && prisma generate && prisma db push",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
