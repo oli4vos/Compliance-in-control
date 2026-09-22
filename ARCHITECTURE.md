@@ -1,7 +1,7 @@
 # Architectuurblauwdruk Aantoonbaar
 
 Status: leidend technisch ontwerp voor de huidige MVP en de doorgroei naar productie  
-Versie: 1.0  
+Versie: 1.1
 Laatst bijgewerkt: 22 september 2026
 
 ## 1. Doel van dit document
@@ -45,11 +45,12 @@ De vaste disclaimer is daarom een domeinonderdeel, geen vrijblijvende UI-tekst:
 3. **Brondata blijft onveranderd.** Een afgeleide titel, categorie of samenvatting vervangt nooit het oorspronkelijke fragment.
 4. **Privacy standaard lokaal en minimaal.** Zonder expliciete AI-configuratie verlaat documentinhoud de lokale omgeving niet.
 5. **Poorten en adapters.** Extractors, matchers, opslag en AI-providers zijn verwisselbaar achter kleine interfaces.
-6. **Modulaire monoliet vóór microservices.** Domeinen worden logisch gescheiden, maar blijven één deploybare applicatie tot schaal of risicoscheiding iets anders vereist.
-7. **Asynchroon waar verwerking zwaar is.** Uploaden mag snel bevestigen; parsing, OCR, extractie en matching worden in productie achtergrondtaken.
-8. **Tenantgrenzen in iedere query.** Een object wordt nooit alleen op id opgehaald als project- of organisatiecontext beschikbaar is.
-9. **Audit is append-only.** Een historische gebeurtenis wordt niet stil gewijzigd of verwijderd.
-10. **Veilig falen.** Een mislukte AI-call valt terug op lokale verwerking, maar de gekozen engine en foutstatus blijven zichtbaar.
+6. **Python is de gezaghebbende backend.** Alle domeinlogica, autorisatie, persistence, documentverwerking, matching en export worden door de Python-backend uitgevoerd. Next.js is uitsluitend de webinterface en eventueel een dunne BFF/proxy.
+7. **Modulaire monoliet vóór microservices.** De Python-backend bevat logisch gescheiden domeinen in één codebase; alleen web, API en worker zijn afzonderlijk deploybaar waar dat operationeel nodig is.
+8. **Asynchroon waar verwerking zwaar is.** Uploaden mag snel bevestigen; parsing, OCR, extractie en matching worden in productie achtergrondtaken.
+9. **Tenantgrenzen in iedere query.** Een object wordt nooit alleen op id opgehaald als project- of organisatiecontext beschikbaar is.
+10. **Audit is append-only.** Een historische gebeurtenis wordt niet stil gewijzigd of verwijderd.
+11. **Veilig falen.** Een mislukte AI-call valt terug op lokale verwerking, maar de gekozen engine en foutstatus blijven zichtbaar.
 
 ## 4. Systeemcontext
 
@@ -124,6 +125,25 @@ flowchart TB
 | Optionele AI | OpenAI Responses API-adapters | alternatieve extractie en matching |
 | Tests | Vitest en Playwright | domein-, integratie- en browsercontrole |
 
+Deze tabel beschrijft de bestaande MVP, niet de definitieve backendkeuze. De huidige Server Actions, Prisma-queries en TypeScript-domeinfuncties worden gefaseerd naar Python gemigreerd; er komt geen tweede permanente implementatie van dezelfde domeinregel.
+
+### Vastgestelde doelstack
+
+| Laag | Doelkeuze | Verantwoordelijkheid |
+|---|---|---|
+| Webfrontend | Next.js, React en TypeScript | presentatie, routing, formulieren en een dunne BFF/proxy |
+| API | Python 3.12+ en FastAPI | versieerbare REST-API, autorisatie en applicatieservices |
+| Validatie | Pydantic | API-contracten, commands en veilige serialisatie |
+| Domein | framework-arme Python-modules | invarianten, workflows en policies |
+| Persistence | SQLAlchemy 2 | repositories en transacties |
+| Migraties | Alembic | gecontroleerde PostgreSQL-schemamigraties |
+| Database | PostgreSQL | gezaghebbende relationele opslag |
+| Achtergrondwerk | Python worker uit dezelfde domeincode | parsing, extractie, matching en exports |
+| API-contract | OpenAPI uit FastAPI | gegenereerde TypeScript-client en contracttests |
+| Back-endtests | Pytest | unit-, integratie-, policy- en API-tests |
+
+FastAPI is de standaardkeuze omdat het een getypeerd OpenAPI-contract, Pydantic-validatie en een lichte async weblaag combineert. De domeinlaag blijft zo framework-onafhankelijk mogelijk, zodat FastAPI niet de plaats wordt waar bedrijfsregels wonen.
+
 ## 6. Logische modules
 
 De bestaande code is nog compact. De bedoelde grenzen zijn:
@@ -142,28 +162,35 @@ De bestaande code is nog compact. De bedoelde grenzen zijn:
 | Identity, toekomstig | organisatie, gebruiker, rollen en sessies | `Organization`, `User`, `Membership` |
 | Ownership, toekomstig | beheerder koppelt per inhoudelijk domein de bevoegde eigenaar | `OrganizationDomain`, `DomainOwnership` |
 
-Gewenste code-indeling bij verdere groei:
+Gewenste repository-indeling na de Pythonmigratie:
 
 ```text
-app/                    routes, layouts, actions en route handlers
-components/             presentatielaag; geen databasequeries
-modules/
-  projects/             domeinservice, queries, validators
-  documents/            upload-, opslag- en parsepoorten
-  requirements/         extractiepoort en domeinregels
-  evidence/             evidence lifecycle en geldigheid
-  matching/             matchpoort, scoring en waarschuwingen
-  assessments/          menselijke besluitvorming
-  audit/                auditservice
-  reporting/            dashboards en exports
-infrastructure/
-  database/             Prisma-repositories
-  storage/              local en object-storage adapters
-  ai/                   lokale en externe AI-adapters
-  queue/                achtergrondtaken
+apps/
+  web/                         Next.js-interface
+    app/                       routes, layouts en dunne serveracties
+    components/                presentatielaag; geen databasequeries
+    lib/api/                   gegenereerde client en BFF-hulpfuncties
+services/
+  api/                         Python-package en deployable
+    app/api/v1/                FastAPI-routes; geen domeinlogica
+    app/core/                  configuratie, identity en cross-cutting concerns
+    app/modules/projects/      models, services, policies en repositories
+    app/modules/documents/     uploads, fragmenten en parsingpoorten
+    app/modules/requirements/  extractie en provenance
+    app/modules/evidence/      organisatiebibliotheek en versies
+    app/modules/matching/      voorstellen, scoring en waarschuwingen
+    app/modules/assessments/   menselijke besluiten en approvals
+    app/modules/audit/         append-only audit
+    app/modules/reporting/     read models en exports
+    app/infrastructure/        SQLAlchemy, opslag, AI en queue-adapters
+    app/workers/               Python achtergrondtaken
+    migrations/                Alembic
+    tests/                     Pytest unit-, integratie- en API-tests
+packages/
+  api-client/                  uit OpenAPI gegenereerde TypeScript-client
 ```
 
-`app/actions.ts` is voor de MVP bruikbaar, maar mag niet het permanente domeincentrum worden. Server Actions horen invoer te valideren, een applicatieservice aan te roepen en het resultaat naar HTTP/UI te vertalen.
+`app/actions.ts` is voor de huidige MVP bruikbaar, maar wordt geen permanent domeincentrum. Na migratie roept een Server Action uitsluitend de Python-API aan via de gegenereerde client en vertaalt hij het resultaat naar de UI. Next.js maakt geen directe databaseverbinding, schrijft geen bestanden en bepaalt geen beoordelings- of autorisatiebeleid.
 
 ## 7. Huidig datamodel en relaties
 
@@ -285,22 +312,30 @@ Goedkeuring en inhoudelijke status zijn afzonderlijke concepten. Een goedgekeurd
 
 ## 9. Poorten en adapters
 
-De bestaande `RequirementExtractor` en `EvidenceMatcher` zijn de juiste richting. Dezelfde stijl wordt toegepast op infrastructuur:
+De bestaande `RequirementExtractor` en `EvidenceMatcher` zijn de juiste richting. Deze contracten worden naar Python `Protocol`-interfaces gemigreerd en ook op infrastructuur toegepast:
 
-```ts
-interface RequirementExtractor {
-  extract(fragments: DocumentFragment[], context: ExtractionContext): Promise<RequirementCandidate[]>;
-}
+```python
+from typing import Protocol, Sequence
 
-interface EvidenceMatcher {
-  match(requirement: RequirementView, evidence: EvidenceView[], context: MatchContext): Promise<MatchProposal[]>;
-}
+class RequirementExtractor(Protocol):
+    async def extract(
+        self,
+        fragments: Sequence[DocumentFragment],
+        context: ExtractionContext,
+    ) -> list[RequirementCandidate]: ...
 
-interface ObjectStorage {
-  put(input: StoredObjectInput): Promise<StoredObjectRef>;
-  get(ref: StoredObjectRef): Promise<ReadableStream>;
-  delete(ref: StoredObjectRef): Promise<void>;
-}
+class EvidenceMatcher(Protocol):
+    async def match(
+        self,
+        requirement: RequirementView,
+        evidence: Sequence[EvidenceView],
+        context: MatchContext,
+    ) -> list[MatchProposal]: ...
+
+class ObjectStorage(Protocol):
+    async def put(self, value: StoredObjectInput) -> StoredObjectRef: ...
+    async def get(self, ref: StoredObjectRef) -> bytes: ...
+    async def delete(self, ref: StoredObjectRef) -> None: ...
 ```
 
 Adapters:
@@ -469,34 +504,51 @@ Exports zijn read models, geen eigen bron van waarheid:
 ```mermaid
 flowchart TB
     U[Browser] --> CDN[CDN / WAF / TLS]
-    CDN --> WEB[Next.js webapp]
-    WEB --> AUTH[Identity en RBAC]
-    WEB --> APP[Applicatieservices / domeinmodules]
+    CDN --> WEB[Next.js frontend / dunne BFF]
+    WEB -->|OpenAPI-client / HTTPS| API[Python FastAPI]
+    API --> AUTH[Identity, RBAC en ownership policies]
+    API --> APP[Python applicatieservices / domeinmodules]
     APP --> PG[(PostgreSQL)]
     APP --> OBJ[(Private objectopslag)]
     APP --> Q[(Queue)]
-    Q --> WK[Document- en matchworker]
+    Q --> WK[Python document- en matchworker]
     WK --> OBJ
     WK --> PG
     WK -. opt-in .-> AI[Externe AI-provider]
     WEB --> OBS[Logs / metrics / traces]
+    API --> OBS
     WK --> OBS
 ```
 
-Dit blijft één product met gedeelde domeinregels. Web en worker kunnen uit dezelfde codebase worden gebouwd. Een aparte service is pas gerechtvaardigd bij onafhankelijke schaal, zwaar OCR-/parsewerk of strengere veiligheidsisolatie.
+Dit blijft één product met één gezaghebbende Python-domeinkern. De API en worker gebruiken hetzelfde Python-package; de worker is geen tweede implementatie. Next.js bevat uitsluitend presentatie- en transportlogica en gebruikt een uit OpenAPI gegenereerde TypeScript-client. Nieuwe externe clients kunnen later dezelfde versieerbare API gebruiken.
 
 Aanbevolen deployment:
 
-- webcontainer op een platform dat Node.js Server Actions en Route Handlers ondersteunt;
+- Next.js-webcontainer voor SSR, UI en de dunne BFF;
+- Python/FastAPI-container voor alle backend-API's en autorisatie;
 - managed PostgreSQL uitsluitend in een EU/EER-regio;
 - private S3-compatibele objectopslag uitsluitend in een EU/EER-regio;
 - managed queue of database-backed queue voor de eerste productiefase;
-- workercontainer met dezelfde releaseversie;
+- Python-workercontainer uit exact dezelfde backendrelease;
 - verwerking, back-ups, logs en disaster-recoverykopieën blijven binnen de EU/EER;
 - gescheiden development-, staging- en productionomgevingen;
 - infrastructuur als code en automatische migraties met rollbackplan.
 
 GitHub Pages kan alleen de statische marketing-/pitchsite hosten. De werkende applicatie vereist servercode, database en private opslag en kan daarom niet als volledige app op GitHub Pages draaien.
+
+### API-grens en contract
+
+- alle product-API's staan onder `/api/v1`;
+- FastAPI genereert de gezaghebbende OpenAPI-specificatie;
+- de TypeScript-client wordt in CI uit die specificatie gegenereerd en niet handmatig gedupliceerd;
+- Pydantic-modellen scheiden request-, response- en domeinmodellen;
+- iedere beveiligde operatie ontvangt organisatiecontext uit een gevalideerde sessie/token; een door de client meegestuurde `organizationId` is nooit op zichzelf vertrouwd;
+- mutaties met retryrisico ondersteunen een idempotency key;
+- updates op beoordelingen en bewijsversies gebruiken een versienummer voor optimistic concurrency;
+- fouten volgen één veilig schema met code, gebruikersmelding, correlation-id en optionele veldfouten;
+- lijsten gebruiken cursorpaginering en expliciete filterparameters;
+- uploads lopen tijdens de eerste migratiefase via FastAPI en later desgewenst via kortlevende, door FastAPI uitgegeven upload-URL's;
+- Python voert altijd autorisatie en domeinvalidatie uit, ook wanneer Next.js dezelfde controle voor gebruiksgemak al heeft getoond.
 
 ## 17. CI/CD en omgevingen
 
@@ -511,8 +563,12 @@ Huidige GitHub Actions-controle:
 Productie-uitbreiding:
 
 - dependency- en secret-scans;
-- lint, unit-, integratie- en E2E-tests;
-- migratiecontrole tegen tijdelijke PostgreSQL;
+- TypeScript lint/typecheck/build voor de frontend;
+- Python lint, formatting en typecheck, bijvoorbeeld Ruff en mypy;
+- Pytest unit-, policy-, integratie- en API-tests;
+- OpenAPI-diff en regeneratiecontrole van de TypeScript-client;
+- Alembic-migratiecontrole tegen tijdelijke PostgreSQL;
+- Playwright E2E-tests tegen de echte Next.js- en FastAPI-processen;
 - software bill of materials en container scan;
 - preview- of stagingdeploy;
 - handmatige productie-approval;
@@ -526,12 +582,13 @@ Testpiramide:
 - **Unit**: categorisatie, extractieregels, scores, waarschuwingen, geldigheid en CSV-escaping;
 - **Domein**: geen automatische voldoende-status, juiste voortgang, scopewaarschuwingen en statusovergangen;
 - **Repository/integratie**: tenantfilters, transacties, cascades en unieke nummers;
-- **Contract**: lokale en AI-adapters leveren hetzelfde interne resultaatformaat;
+- **Contract**: lokale en AI-adapters leveren hetzelfde Python-resultaatmodel; OpenAPI en TypeScript-client blijven synchroon;
+- **API**: Pytest controleert authenticatie, ownership policies, foutcontracten, idempotentie en concurrency;
 - **E2E**: project → upload → extractie → bewijs → match → beoordeling → export;
 - **Security**: padmanipulatie, cross-project access, uploadbypass en autorisatiematrix;
 - **Herstel**: job retry, dubbele verwerking, back-uprestore en provideruitval.
 
-De browsertest gebruikt fictieve data. Externe AI wordt in CI gemockt; kernacceptatie mag nooit van een betaalde provider afhangen.
+De browsertest gebruikt fictieve data en start zowel de Next.js-frontend als de Python-API. Externe AI wordt in CI gemockt; kernacceptatie mag nooit van een betaalde provider afhangen.
 
 ## 19. Observability en operationeel beheer
 
@@ -552,6 +609,7 @@ Iedere request en achtergrondtaak krijgt een correlation-id. Alerts zijn actiege
 
 | Prioriteit | Bevinding | Gevolg | Besluit |
 |---|---|---|---|
+| Hoog | huidige backendlogica staat in Next.js/TypeScript | wijkt af van de gekozen Python-backend en kan tot dubbele domeinlogica leiden | per verticale workflow naar FastAPI migreren; daarna TypeScript-implementatie verwijderen |
 | Hoog | upload wordt vóór databasecommit opgeslagen | verweesde bestanden bij fout | uploadstatus + compensatie/reconciliatie |
 | Hoog | beoordeling, eisstatus, taak en audit zijn losse writes | gedeeltelijke updates | één databasetransactie |
 | Hoog | `Requirement.status` dupliceert `Assessment.status` | statusdrift | Assessment gezaghebbend; status afleiden |
@@ -592,11 +650,21 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 
 - huidige end-to-endflow stabiel houden;
 - architectuurregels en demo-scenario's vastleggen;
-- transacties rond beoordeling toevoegen;
-- engine/fallback in de UI en audit tonen;
-- uploadfouten compenseren.
+- Python-project met FastAPI, Pydantic, SQLAlchemy, Alembic en Pytest opzetten;
+- lokale orchestration toevoegen zodat Next.js, FastAPI en de database met één commando starten;
+- `/health`, `/ready` en OpenAPI-clientgeneratie toevoegen;
+- geen nieuwe domeinlogica meer aan Next.js toevoegen.
 
-### Fase 1 — pilotklaar
+### Fase 1 — Python-backendmigratie
+
+- schema en repositories naar SQLAlchemy/PostgreSQL migreren;
+- verticale workflows één voor één overzetten: project → documenten → eisen → bewijs → matching → beoordeling → export;
+- per workflow contract- en regressietests toevoegen;
+- Next Server Actions reduceren tot API-aanroepen;
+- oude Prisma- en TypeScript-domeinlogica na datavalidatie verwijderen;
+- transacties, engine/fallback en uploadcompensatie in Python implementeren.
+
+### Fase 2 — pilotklaar
 
 - PostgreSQL;
 - private objectopslag;
@@ -607,7 +675,7 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 - foutmonitoring, back-ups en restore-test;
 - documentfragmenten en zuivere provenance.
 
-### Fase 2 — workflow en schaal
+### Fase 3 — workflow en schaal
 
 - queue en workers;
 - document- en assessmentversies;
@@ -615,7 +683,7 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 - vier-ogenworkflow, notificaties en robuuste filters;
 - gecontroleerde exports en bewaarbeleid.
 
-### Fase 3 — gecontroleerde AI
+### Fase 4 — gecontroleerde AI
 
 - beheerde providerconfiguratie per organisatie;
 - verwerkingstoestemming op vertrouwelijkheidsniveau;
@@ -623,7 +691,7 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 - kwaliteitsmetingen voor extractie en matching;
 - eventueel embeddings na bewezen meerwaarde.
 
-### Fase 4 — enterprise integraties
+### Fase 5 — enterprise integraties
 
 - SSO/SAML of OIDC;
 - SharePoint/Google Drive/GRC-connectors op basis van klantvraag;
@@ -645,6 +713,8 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 | ADR-009 | bewijsbibliotheek is organisatiebreed | voorkomt duplicatie en maakt beheerd hergebruik tussen dossiers mogelijk |
 | ADR-010 | bevoegdheid volgt toegewezen domeineigenaarschap | inhoudelijke beslissingen blijven bij de verantwoordelijke eigenaar, niet automatisch bij de beheerder |
 | ADR-011 | EU/EER-datalocatie is verplicht | ondersteunt de gewenste privacy-, aanbestedings- en marktpositionering |
+| ADR-012 | Python/FastAPI is altijd de backend | één consistente domeinkern voor API, workers, documentverwerking en toekomstige integraties |
+| ADR-013 | OpenAPI is het frontend-backendcontract | voorkomt handmatig gedupliceerde request- en responsetypes |
 
 Nieuwe betekenisvolle besluiten krijgen een apart bestand onder `docs/adr/` met context, keuze, alternatieven en consequenties.
 
@@ -652,6 +722,8 @@ Nieuwe betekenisvolle besluiten krijgen een apart bestand onder `docs/adr/` met 
 
 Een productieversie is pas verantwoord wanneer:
 
+- alle gezaghebbende backend- en domeinlogica in Python draait en Next.js geen directe database- of opslagtoegang heeft;
+- OpenAPI-specificatie en gegenereerde TypeScript-client in CI synchroon zijn;
 - tenantisolatie geautomatiseerd is getest;
 - iedere mutatie autorisatie en schema-validatie heeft;
 - uploads inhoudelijk worden gevalideerd en gescand;
@@ -670,6 +742,7 @@ Een productieversie is pas verantwoord wanneer:
 1. **Organisatiebrede bewijsbibliotheek.** Een bewijsstuk is eigendom van de organisatie en kan, met behoud van versie en scope, aan meerdere projecten worden gekoppeld. Een beoordeling en match blijven projectspecifiek.
 2. **Beheerdergestuurd eigenaarschap.** De organisatiebeheerder wijst per inhoudelijk onderdeel precies de bevoegde eigenaar aan. Alleen deze eigenaar mag beoordelingen voor dat onderdeel goedkeuren, heropenen of exporteren. Voor het samengestelde dossier wijst de beheerder daarnaast een dossier-eigenaar aan; die mag de totaalexport pas vrijgeven nadat alle opgenomen onderdelen zijn goedgekeurd. Toewijzingen en wijzigingen worden geaudit.
 3. **EU/EER als harde hostinggrens.** Primaire data, documenten, verwerking, back-ups en operationele logs blijven binnen de EU/EER. Een externe AI-provider mag alleen worden gebruikt als diens gekozen verwerking en contractuele instellingen aan deze grens voldoen.
+4. **Python is altijd de backend.** FastAPI is de gekozen API-laag; Pydantic, SQLAlchemy, Alembic en Pytest vormen de standaard backendstack. Next.js blijft de frontend en mag geen permanente domeinlogica, directe databasetoegang of documentverwerking bevatten.
 
 Voor “onderdeel” gebruikt het ontwerp voorlopig een organisatiebreed domein, bijvoorbeeld informatiebeveiliging, privacy, AI en algoritmen of continuïteit. Eisen worden aan één primair domein gekoppeld. Als later fijnmaziger eigenaarschap nodig blijkt, kan hetzelfde model op product, control of bewijscollectie worden uitgebreid zonder het bevoegdheidsprincipe te veranderen.
 
@@ -697,14 +770,14 @@ De volgende vragen zijn niet blokkerend voor de huidige MVP, maar moeten vóór 
 
 ## 26. Eerstvolgende technische stappen
 
-1. Splits `app/actions.ts` in gevalideerde applicatieservices en maak beoordeling + taak + audit transactioneel.
-2. Voeg `ProcessingRun` en expliciete enginegegevens toe voor extractie en matching.
-3. Modelleer bronfragmenten en samengestelde eisen met `DocumentFragment` en `RequirementSource`.
-4. Maak een opslaginterface en corrigeer verweesde uploads met compensatie en reconciliatie.
-5. Ontwerp `Organization`, `User`, `Membership`, `OrganizationDomain`, `DomainOwnership`, `ProjectOwnership` en `ProjectEvidence`, inclusief beleidsregels en audittests, vóórdat echte klantdata wordt gebruikt.
+1. Scaffold `services/api` met FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest, Ruff en mypy.
+2. Voeg lokale orchestration en healthchecks toe, zodat frontend, Python-API en database met één gedocumenteerde opdracht starten.
+3. Leg OpenAPI-clientgeneratie vast en laat Next.js uitsluitend via die client communiceren.
+4. Migreer eerst de complete projectworkflow en daarna documenten, eisen, bewijs, matching, beoordeling en export als afzonderlijke verticale slices.
+5. Voeg tijdens de migratie `Organization`, ownership, `ProjectEvidence`, `ProcessingRun`, fragmentprovenance en transactionele audit toe; verwijder iedere vervangen Prisma/TypeScript-implementatie direct na regressiecontrole.
 
 ## 27. Samenvatting
 
-Aantoonbaar is nu een bruikbare lokale Next.js/Prisma-monoliet waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch zijn gescheiden. De belangrijkste productregel—automatisering adviseert, de mens beslist—is al zichtbaar in het datamodel.
+Aantoonbaar is nu een bruikbare lokale Next.js/Prisma-MVP waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch zijn gescheiden. De belangrijkste productregel—automatisering adviseert, de mens beslist—is al zichtbaar in het datamodel. Deze TypeScript-backend is een migratiebron en niet de blijvende backendarchitectuur.
 
-De aanbevolen doorgroei is geen herbouw naar microservices, maar een beheerste versterking van dezelfde modulaire monoliet: PostgreSQL, private EU/EER-objectopslag, achtergrondworkers, sterke tenantisolatie, een organisatiebrede bewijsbibliotheek, beheerdergestuurd domeineigenaarschap, versioned provenance en append-only audit. Daarmee blijft de demo snel en begrijpelijk, terwijl het fundament geschikt wordt voor vertrouwelijke zakelijke dossiers.
+De vastgestelde doorgroei is een Next.js-frontend boven één modulaire Python/FastAPI-backend met PostgreSQL, private EU/EER-objectopslag en Python-workers uit dezelfde domeinkern. Sterke tenantisolatie, een organisatiebrede bewijsbibliotheek, beheerdergestuurd domeineigenaarschap, versioned provenance en append-only audit maken het fundament geschikt voor vertrouwelijke zakelijke dossiers zonder vroegtijdig naar microservices te gaan.

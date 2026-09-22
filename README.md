@@ -4,6 +4,8 @@ Aantoonbaar is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen 
 
 De volledige technische samenhang, huidige risico's en productie-doelarchitectuur staan in [ARCHITECTURE.md](ARCHITECTURE.md).
 
+> **Architectuurbesluit:** de huidige MVP gebruikt nog Next.js Server Actions en Prisma als lokale backend. De vastgestelde doelarchitectuur gebruikt altijd een Python/FastAPI-backend; Next.js blijft de frontend. De migratievolgorde en grens tussen beide staan in de architectuurblauwdruk.
+
 ## Technologie
 
 - Next.js 16 met App Router en TypeScript
