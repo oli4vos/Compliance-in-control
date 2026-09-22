@@ -2,6 +2,8 @@
 
 Aantoonbaar is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen uit aanbestedingen, securityvragenlijsten en klantuitvragen willen koppelen aan controleerbare bewijsstukken. De app helpt bij ordenen en beoordelen; zij geeft geen juridisch oordeel, certificering of garantie van naleving.
 
+De volledige technische samenhang, huidige risico's en productie-doelarchitectuur staan in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Technologie
 
 - Next.js 16 met App Router en TypeScript
