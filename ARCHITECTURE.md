@@ -140,6 +140,7 @@ De bestaande code is nog compact. De bedoelde grenzen zijn:
 | Audit | wijzigingen append-only vastleggen | `AuditEvent` |
 | Reporting | dashboard, CSV en dossierweergave | read models over meerdere modules |
 | Identity, toekomstig | organisatie, gebruiker, rollen en sessies | `Organization`, `User`, `Membership` |
+| Ownership, toekomstig | beheerder koppelt per inhoudelijk domein de bevoegde eigenaar | `OrganizationDomain`, `DomainOwnership` |
 
 Gewenste code-indeling bij verdere groei:
 
@@ -200,8 +201,11 @@ erDiagram
 - Een `EvidenceMatch` is alleen een voorstel, ook bij score 100.
 - `Assessment.status` is de gezaghebbende menselijke status.
 - Voortgang wordt alleen uit menselijke beoordelingen berekend.
-- Een bewijsstuk of match uit project A mag niet via project B bereikbaar zijn.
+- Een projectspecifieke match uit project A mag nooit via project B bereikbaar zijn; organisatiebewijs is in project B pas bruikbaar na een expliciete `ProjectEvidence`-koppeling en autorisatie.
 - Een beoordeling “voldoende onderbouwd” vereist een menselijke actor en tijdstip.
+- Bewijs behoort in de doelarchitectuur aan de organisatie en kan gecontroleerd in meerdere projecten worden gebruikt.
+- Alleen de door de organisatiebeheerder aangewezen eigenaar van een inhoudelijk domein mag beoordelingen binnen dat domein goedkeuren, heropenen of exporteren.
+- Een organisatiebeheerder beheert eigenaarschap, maar krijgt daardoor niet automatisch inhoudelijke goedkeuringsrechten.
 - Verwijderen van een dossier verwijdert de bijbehorende databasegegevens en bestanden volgens retentiebeleid; in productie gebeurt dit gecontroleerd en auditeerbaar.
 
 ## 8. Kerngegevensstromen
@@ -350,6 +354,7 @@ Niet beoordeeld, mogelijk passend, gedeeltelijk, onvoldoende en ontbrekend telle
 
 - PostgreSQL met organisatie-id op ieder tenantgebonden record;
 - private objectopslag met willekeurige keys, server-side encryptie en lifecycle rules;
+- een organisatiebrede bewijsbibliotheek; projecten verwijzen via een koppeltabel naar toepasselijke bewijsversies;
 - gesigneerde downloads met korte geldigheid, pas na autorisatie;
 - losse `DocumentFragment`-records met pagina/alinea en eventueel PDF-coördinaten;
 - checksums voor integriteit en duplicaatdetectie;
@@ -378,7 +383,9 @@ Database en objectopslag vormen samen één logisch proces maar geen echte ACID-
 ### Nodig vóór echte vertrouwelijke data
 
 - authenticatie en sessiebeveiliging;
-- organisatie- en rolgebaseerde autorisatie (`Admin`, `Contributor`, `Reviewer`, `Viewer`);
+- organisatie- en rolgebaseerde autorisatie (`OrganizationAdmin`, `Contributor`, `DomainOwner`, `Viewer`);
+- domeineigenaarschap dat uitsluitend door `OrganizationAdmin` kan worden toegewezen of ingetrokken;
+- beleidscontrole waarbij alleen de toegewezen `DomainOwner` voor het betreffende onderdeel mag goedkeuren, heropenen of exporteren;
 - tenant-id in schema, repositories en policies;
 - MIME-, magic-byte- en inhoudsvalidatie;
 - malware-scanning en quarantainestatus;
@@ -392,6 +399,20 @@ Database en objectopslag vormen samen één logisch proces maar geen echte ACID-
 - penetratietest en secure development lifecycle.
 
 Logging bevat ids, status, timing en veilige foutcodes, maar geen volledige documenttekst, prompts, tokens of secrets.
+
+### Autorisatiematrix voor de doelarchitectuur
+
+| Handeling | OrganizationAdmin | Contributor | Toegewezen DomainOwner | Viewer |
+|---|---:|---:|---:|---:|
+| leden en rollen beheren | ja | nee | nee | nee |
+| domeineigenaar koppelen of intrekken | ja | nee | nee | nee |
+| organisatiebewijs registreren of conceptversie maken | ja | ja | ja | nee |
+| eis, match en conceptbeoordeling voorbereiden | ja | ja | ja | nee |
+| beoordeling goedkeuren of heropenen | alleen als tevens eigenaar | nee | alleen eigen domein | nee |
+| onderdeel exporteren | alleen als tevens eigenaar | nee | alleen eigen domein | nee |
+| volledig goedgekeurd dossier downloaden | alleen als tevens dossier-eigenaar | nee | alleen als tevens dossier-eigenaar en alle domeinen zijn goedgekeurd | nee |
+
+Autorisatie wordt altijd server-side afgedwongen op basis van organisatie, domein en actieve eigendomstoewijzing. Het verbergen van een knop in de interface is geen beveiligingsmaatregel. Iedere wijziging in eigenaarschap en iedere goedkeuring, heropening of export wordt geaudit.
 
 ## 13. Externe AI
 
@@ -439,6 +460,8 @@ Exports zijn read models, geen eigen bron van waarheid:
 - iedere export toont disclaimer, gegenereerd-op tijdstip en beoordelingspeildatum;
 - automatische score en menselijke status blijven afzonderlijke kolommen;
 - vertrouwelijkheid moet zichtbaar zijn en kan exportrechten beperken;
+- een domeineigenaar kan uitsluitend het eigen toegewezen onderdeel exporteren;
+- een volledig dossier wordt pas vrijgegeven wanneer ieder opgenomen onderdeel door zijn toegewezen eigenaar is goedgekeurd; alleen de door de beheerder aangewezen dossier-eigenaar mag deze samengestelde export genereren of downloaden;
 - productie kan exports asynchroon genereren en tijdelijk privé opslaan.
 
 ## 16. Productie-doelarchitectuur
@@ -465,10 +488,11 @@ Dit blijft één product met gedeelde domeinregels. Web en worker kunnen uit dez
 Aanbevolen deployment:
 
 - webcontainer op een platform dat Node.js Server Actions en Route Handlers ondersteunt;
-- managed PostgreSQL in EU-regio;
-- private S3-compatibele objectopslag in passende regio;
+- managed PostgreSQL uitsluitend in een EU/EER-regio;
+- private S3-compatibele objectopslag uitsluitend in een EU/EER-regio;
 - managed queue of database-backed queue voor de eerste productiefase;
 - workercontainer met dezelfde releaseversie;
+- verwerking, back-ups, logs en disaster-recoverykopieën blijven binnen de EU/EER;
 - gescheiden development-, staging- en productionomgevingen;
 - infrastructuur als code en automatische migraties met rollbackplan.
 
@@ -547,6 +571,10 @@ Iedere request en achtergrondtaak krijgt een correlation-id. Alerts zijn actiege
 Voor productie worden de volgende concepten toegevoegd:
 
 - `Organization`, `User`, `Membership`, `Role` voor tenant en toegang;
+- `OrganizationDomain` voor beheerde onderdelen zoals informatiebeveiliging, privacy, AI en continuïteit;
+- `DomainOwnership` voor de door de organisatiebeheerder aangewezen inhoudelijke eigenaar en de geldigheidsperiode van die aanwijzing;
+- `ProjectOwnership` voor de aangewezen dossier-eigenaar die de samengestelde export mag vrijgeven;
+- `ProjectEvidence` om een organisatiebreed bewijsstuk gecontroleerd aan één of meer projecten te koppelen;
 - `DocumentVersion` zodat een bewijsstuk kan worden vervangen zonder historie te verliezen;
 - `DocumentFragment` voor pagina/alinea/coördinaten en compacte zoekindex;
 - `RequirementSource` om één eis aan meerdere oorspronkelijke fragmenten te koppelen;
@@ -572,8 +600,10 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 
 - PostgreSQL;
 - private objectopslag;
-- organisatie, gebruikers en RBAC;
+- organisatie, gebruikers, RBAC en beheerdergestuurde domeineigenaars;
+- organisatiebrede bewijsbibliotheek met projectspecifieke koppelingen;
 - magic-bytevalidatie, malwarecheck en veilige headers;
+- afdwingbaar EU/EER-datalocatiebeleid voor data, logs en back-ups;
 - foutmonitoring, back-ups en restore-test;
 - documentfragmenten en zuivere provenance.
 
@@ -612,6 +642,9 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 | ADR-006 | fragmentgebaseerde provenance | uitlegbaarheid en controleerbare exports |
 | ADR-007 | geen vector database zonder bewijs | complexiteit, privacy en kosten blijven proportioneel |
 | ADR-008 | GitHub Pages alleen voor statische site | de applicatie vereist serverruntime en private data |
+| ADR-009 | bewijsbibliotheek is organisatiebreed | voorkomt duplicatie en maakt beheerd hergebruik tussen dossiers mogelijk |
+| ADR-010 | bevoegdheid volgt toegewezen domeineigenaarschap | inhoudelijke beslissingen blijven bij de verantwoordelijke eigenaar, niet automatisch bij de beheerder |
+| ADR-011 | EU/EER-datalocatie is verplicht | ondersteunt de gewenste privacy-, aanbestedings- en marktpositionering |
 
 Nieuwe betekenisvolle besluiten krijgen een apart bestand onder `docs/adr/` met context, keuze, alternatieven en consequenties.
 
@@ -630,29 +663,37 @@ Een productieversie is pas verantwoord wanneer:
 - privacy-, beveiligings- en toegankelijkheidsbeoordelingen zijn uitgevoerd;
 - juridische teksten duidelijk maken dat Aantoonbaar ondersteunt maar niet certificeert.
 
-## 25. Aannames en open productbesluiten
+## 25. Vastgestelde productkeuzes, aannames en open besluiten
+
+### Vastgesteld op 22 september 2026
+
+1. **Organisatiebrede bewijsbibliotheek.** Een bewijsstuk is eigendom van de organisatie en kan, met behoud van versie en scope, aan meerdere projecten worden gekoppeld. Een beoordeling en match blijven projectspecifiek.
+2. **Beheerdergestuurd eigenaarschap.** De organisatiebeheerder wijst per inhoudelijk onderdeel precies de bevoegde eigenaar aan. Alleen deze eigenaar mag beoordelingen voor dat onderdeel goedkeuren, heropenen of exporteren. Voor het samengestelde dossier wijst de beheerder daarnaast een dossier-eigenaar aan; die mag de totaalexport pas vrijgeven nadat alle opgenomen onderdelen zijn goedgekeurd. Toewijzingen en wijzigingen worden geaudit.
+3. **EU/EER als harde hostinggrens.** Primaire data, documenten, verwerking, back-ups en operationele logs blijven binnen de EU/EER. Een externe AI-provider mag alleen worden gebruikt als diens gekozen verwerking en contractuele instellingen aan deze grens voldoen.
+
+Voor “onderdeel” gebruikt het ontwerp voorlopig een organisatiebreed domein, bijvoorbeeld informatiebeveiliging, privacy, AI en algoritmen of continuïteit. Eisen worden aan één primair domein gekoppeld. Als later fijnmaziger eigenaarschap nodig blijkt, kan hetzelfde model op product, control of bewijscollectie worden uitgebreid zonder het bevoegdheidsprincipe te veranderen.
+
+### Overige aannames
 
 Deze blauwdruk neemt voorlopig aan dat:
 
-- een bewijsstuk in de MVP projectspecifiek is;
 - één organisatie eigenaar is van een dossier;
 - Nederlands de primaire taal is;
 - de meeste bestanden kleiner zijn dan 10 MB;
 - een reviewer uiteindelijk verantwoordelijk blijft voor iedere definitieve status;
-- EU-hosting voor de eerste zakelijke pilots gewenst is.
+- één domein één actieve primaire eigenaar heeft.
+
+### Nog open
 
 De volgende vragen zijn niet blokkerend voor de huidige MVP, maar moeten vóór pilotarchitectuur worden beslist:
 
-1. Wordt de bewijsbibliotheek organisatiebreed, projectspecifiek of beide?
-2. Moet één beoordeling meerdere bewijsstukken met afzonderlijke waardering kunnen bevatten? De architectuur adviseert: ja.
-3. Welke rollen mogen een beoordeling goedkeuren, heropenen of exporteren?
-4. Welke bewaartermijnen gelden voor brondocumenten, bewijs, exports en auditlog?
-5. Is externe AI een organisatie-instelling, een projectkeuze of per document/actie een opt-in?
-6. Is uitsluitend EU/EER-verwerking een harde commerciële eis?
-7. Welke eerste integratie levert de meeste klantwaarde: SharePoint, Drive, GRC of een generieke API?
-8. Mogen bewijsstukken veilig tussen projecten worden hergebruikt en wie beheert versies?
-9. Is de commerciële eenheid per organisatie, gebruiker, dossier of aanbesteding?
-10. Welk assurance-niveau moet het auditlog ondersteunen: intern beheer, externe audit of formeel bewijs?
+1. Moet één beoordeling meerdere bewijsstukken met afzonderlijke waardering kunnen bevatten? De architectuur adviseert: ja.
+2. Welke bewaartermijnen gelden voor brondocumenten, bewijs, exports en auditlog?
+3. Is externe AI een organisatie-instelling, een projectkeuze of per document/actie een opt-in?
+4. Welke eerste integratie levert de meeste klantwaarde: SharePoint, Drive, GRC of een generieke API?
+5. Wie mag organisatiebrede bewijsversies publiceren, vervangen en intrekken?
+6. Is de commerciële eenheid per organisatie, gebruiker, dossier of aanbesteding?
+7. Welk assurance-niveau moet het auditlog ondersteunen: intern beheer, externe audit of formeel bewijs?
 
 ## 26. Eerstvolgende technische stappen
 
@@ -660,10 +701,10 @@ De volgende vragen zijn niet blokkerend voor de huidige MVP, maar moeten vóór 
 2. Voeg `ProcessingRun` en expliciete enginegegevens toe voor extractie en matching.
 3. Modelleer bronfragmenten en samengestelde eisen met `DocumentFragment` en `RequirementSource`.
 4. Maak een opslaginterface en corrigeer verweesde uploads met compensatie en reconciliatie.
-5. Ontwerp `Organization`, `User`, `Membership` en RBAC vóórdat echte klantdata wordt gebruikt.
+5. Ontwerp `Organization`, `User`, `Membership`, `OrganizationDomain`, `DomainOwnership`, `ProjectOwnership` en `ProjectEvidence`, inclusief beleidsregels en audittests, vóórdat echte klantdata wordt gebruikt.
 
 ## 27. Samenvatting
 
 Aantoonbaar is nu een bruikbare lokale Next.js/Prisma-monoliet waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch zijn gescheiden. De belangrijkste productregel—automatisering adviseert, de mens beslist—is al zichtbaar in het datamodel.
 
-De aanbevolen doorgroei is geen herbouw naar microservices, maar een beheerste versterking van dezelfde modulaire monoliet: PostgreSQL, private objectopslag, achtergrondworkers, sterke tenantisolatie, versioned provenance en append-only audit. Daarmee blijft de demo snel en begrijpelijk, terwijl het fundament geschikt wordt voor vertrouwelijke zakelijke dossiers.
+De aanbevolen doorgroei is geen herbouw naar microservices, maar een beheerste versterking van dezelfde modulaire monoliet: PostgreSQL, private EU/EER-objectopslag, achtergrondworkers, sterke tenantisolatie, een organisatiebrede bewijsbibliotheek, beheerdergestuurd domeineigenaarschap, versioned provenance en append-only audit. Daarmee blijft de demo snel en begrijpelijk, terwijl het fundament geschikt wordt voor vertrouwelijke zakelijke dossiers.
