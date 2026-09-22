@@ -10,7 +10,7 @@ test("projecten worden via de Python-backend aangemaakt en getoond", async ({ pa
   await page.getByRole("button", { name: "Dossier aanmaken", exact: true }).click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
 
-  const apiResponse = await request.get("http://127.0.0.1:8000/api/v1/projects");
+  const apiResponse = await request.get("http://127.0.0.1:18000/api/v1/projects");
   expect(apiResponse.ok()).toBeTruthy();
   const projects = await apiResponse.json() as Array<{ name: string }>;
   expect(projects.some((project) => project.name === name)).toBeTruthy();

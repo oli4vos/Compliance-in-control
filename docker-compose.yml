@@ -20,6 +20,9 @@ services:
       AANTOONBAAR_DATABASE_URL: postgresql+psycopg://aantoonbaar:aantoonbaar@db:5432/aantoonbaar
       AANTOONBAAR_ENVIRONMENT: development
       AANTOONBAAR_AUTO_SEED_DEMO: "true"
+      AANTOONBAAR_UPLOAD_DIR: /app/storage/uploads
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-astra}
     depends_on:
       db:
         condition: service_healthy
@@ -29,26 +32,23 @@ services:
       timeout: 3s
       retries: 20
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    volumes:
+      - uploads_data:/app/storage/uploads
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
-    command: sh -c "npm run db:setup && npm run seed && npm run dev -- --hostname 0.0.0.0"
+    command: npm run dev -- --hostname 0.0.0.0
     environment:
-      DATABASE_URL: file:/app/data/legacy.db
       PYTHON_API_URL: http://api:8000
     depends_on:
       api:
         condition: service_healthy
     ports:
       - "3000:3000"
-    volumes:
-      - legacy_data:/app/data
-      - uploads_data:/app/storage/uploads
 
 volumes:
   postgres_data:
-  legacy_data:
   uploads_data:

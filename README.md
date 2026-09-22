@@ -4,15 +4,14 @@ Aantoonbaar is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen 
 
 De volledige technische samenhang, huidige risico's en productie-doelarchitectuur staan in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-> **Architectuurbesluit:** de huidige MVP gebruikt nog Next.js Server Actions en Prisma als lokale backend. De vastgestelde doelarchitectuur gebruikt altijd een Python/FastAPI-backend; Next.js blijft de frontend. De migratievolgorde en grens tussen beide staan in de architectuurblauwdruk.
+> **Architectuurbesluit uitgevoerd:** Python/FastAPI is de enige backend en PostgreSQL is de enige relationele bron van waarheid. Next.js blijft de webinterface en roept de versieerbare Python-API aan via een uit OpenAPI gegenereerd contract.
 
 ## Technologie
 
 - Next.js 16 met App Router en TypeScript voor de frontend
 - React 19 en Tailwind CSS 4
-- Python/FastAPI, Pydantic, SQLAlchemy en Alembic voor de nieuwe backend
-- PostgreSQL voor de gezaghebbende projectservice
-- Prisma 6 met SQLite als tijdelijke compatibiliteitslaag voor nog niet gemigreerde modules
+- Python/FastAPI, Pydantic, SQLAlchemy en Alembic voor alle backendworkflows
+- PostgreSQL voor projecten, documenten, eisen, bewijs, matches, beoordelingen, taken en audit
 - Lokale, niet-publieke bestandsopslag in `storage/uploads/`
 - Lokale heuristische extractie en matching
 - Optionele OpenAI Responses API-adapters met automatische lokale terugval
@@ -27,9 +26,9 @@ npm install
 npm run dev:stack
 ```
 
-Open daarna [http://localhost:3000](http://localhost:3000). De interactieve Python-API-documentatie staat op [http://localhost:8000/docs](http://localhost:8000/docs). Docker Compose voert de Alembic-migratie uit en laadt het fictieve Waterdam-demodossier in beide tijdelijke datalagen.
+Open daarna [http://localhost:3000](http://localhost:3000). De interactieve Python-API-documentatie van de Docker-stack staat op [http://localhost:8001/docs](http://localhost:8001/docs). Docker Compose voert de Alembic-migraties uit en laadt het fictieve Waterdam-demodossier in PostgreSQL.
 
-Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. PostgreSQL, tijdelijke legacydata en uploads blijven daardoor behouden bij een normale herbouw. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
+Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. PostgreSQL-data en private uploads blijven daardoor behouden bij een normale herbouw. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
 
 Stoppen kan met `Ctrl+C`; verwijder alleen de lokale containervolumes wanneer u bewust alle lokale PostgreSQL-data wilt wissen:
 
@@ -45,7 +44,7 @@ Voor ontwikkeling zonder Docker moeten PostgreSQL en de twee processen afzonderl
 npm run dev          # ontwikkelserver op localhost:3000
 npm run dev:stack    # volledige stack: Next.js, FastAPI en PostgreSQL
 npm run build        # productiebuild en TypeScript-controle
-npm run db:setup     # Prisma-client genereren en SQLite-schema synchroniseren
+npm run db:setup     # Alembic-migraties uitvoeren voor de Python-backend
 npm run seed         # synthetische demo-data laden
 npm test             # unit- en domeintests
 npm run test:e2e     # Playwright end-to-endtest
@@ -80,14 +79,14 @@ De voortgang gebruikt uitsluitend menselijke beoordelingsstatussen. Een automati
 
 ## Optionele AI-configuratie
 
-De app is zonder API-sleutel volledig bruikbaar. Kopieer optionele waarden uit `.env.example` naar `.env.local`:
+De app is zonder API-sleutel volledig bruikbaar. Kopieer optionele waarden uit `.env.example` naar `.env.local`. `npm run dev:stack` leest dit bestand automatisch wanneer het bestaat:
 
 ```env
 OPENAI_API_KEY="..."
 OPENAI_MODEL="gpt-6-astra"
 ```
 
-Met een sleutel worden de LLM-implementaties van `RequirementExtractor` en `EvidenceMatcher` geactiveerd. API-fouten vallen terug op de lokale implementaties. Pas `OPENAI_MODEL` aan als het gekozen model niet voor het account beschikbaar is. De integratie gebruikt de Responses API volgens de [officiële OpenAI-quickstart](https://developers.openai.com/api/docs/quickstart?site_locale=en). Let op: documenten die via deze optionele route worden verwerkt, verlaten de lokale omgeving en vallen onder de voorwaarden en gegevensinstellingen van de gekozen API-provider.
+Met een sleutel worden de verwisselbare Python-adapters voor extractie en matching geactiveerd. API-fouten vallen terug op de lokale implementaties en de gebruikte engine wordt in het auditlog vastgelegd. Pas `OPENAI_MODEL` aan als het gekozen model niet voor het account beschikbaar is. Let op: documenten die via deze optionele route worden verwerkt, verlaten de lokale omgeving en vallen onder de voorwaarden en gegevensinstellingen van de gekozen API-provider.
 
 ## Bestands- en gegevensveiligheid
 
@@ -102,7 +101,7 @@ Dit is een lokale MVP, geen productieklare beveiligingsomgeving. Er is één sta
 
 ## Tests
 
-De tests dekken lokale eisenextractie, traceerbare matching, verlopen en binnenkort verlopend bewijs, CSV-escaping en de browserworkflow voor projectaanmaak, TXT-upload, extractie, bewijsregistratie, matching, menselijke status en export.
+De tests dekken projectaanmaak, bestandstypevalidatie, TXT-upload, lokale eisenextractie, traceerbare matching, verlopen bewijs, menselijke beoordeling, taken, audit, CSV-export en de volledige browserworkflow.
 
 ```bash
 npm test
@@ -113,8 +112,6 @@ De Playwright-configuratie start voor lokale tests zowel FastAPI als Next.js. De
 
 ## Bekende beperkingen
 
-- Alleen de projectlijst en projectaanmaak zijn al gezaghebbend naar Python/PostgreSQL gemigreerd. Documenten, eisen, bewijs, beoordelingen en exports gebruiken tijdelijk nog Prisma/SQLite.
-- Nieuwe Python-projecten krijgen tijdens deze overgang een Prisma-projectie met hetzelfde id, zodat de bestaande volledige werkruimte blijft functioneren. Deze projectie wordt verwijderd na migratie van de documentmodule.
 - PDF-paginareferenties zijn afhankelijk van wat de PDF-parser betrouwbaar kan uitlezen; DOCX en TXT gebruiken alineareferenties.
 - De lokale matcher gebruikt trefwoorden en tekstoverlap, geen semantische vectorzoekmachine.
 - Demo-documenten bestaan als database-inhoud; hun fictieve bronbestanden worden niet op schijf gezet.
@@ -124,8 +121,8 @@ De Playwright-configuratie start voor lokale tests zowel FastAPI als Next.js. De
 
 ## Vervolg richting productie
 
-1. Migreer documenten en private bestandsopslag als volgende verticale Python-slice.
-2. Migreer eisen, bewijs, matching, beoordeling en export en verwijder daarna Prisma/SQLite.
-3. Voeg organisatie- en rolgebaseerde authenticatie, ownership policies en tenantisolatie toe.
-4. Introduceer versleutelde objectopslag, malware-scanning, back-ups en aantoonbaar retentiebeleid.
-5. Voer securitytests, privacy-impactanalyse, toegankelijkheidsaudit en gecontroleerde deployment uit.
+1. Voeg organisatie- en rolgebaseerde authenticatie, ownership policies en tenantisolatie toe.
+2. Introduceer versleutelde objectopslag, magic-bytecontrole, malware-scanning en uploadcompensatie.
+3. Maak beoordeling, taak, metrics en audit expliciet één transactionele applicatieservice met revisiehistorie.
+4. Voeg documentfragmenten met zuivere pagina-/alinea-provenance en meerdere bewijsstukken per beoordeling toe.
+5. Voer securitytests, privacy-impactanalyse, toegankelijkheidsaudit en gecontroleerde EU/EER-deployment uit.

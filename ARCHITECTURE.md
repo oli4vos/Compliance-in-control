@@ -1,7 +1,7 @@
 # Architectuurblauwdruk Aantoonbaar
 
 Status: leidend technisch ontwerp voor de huidige MVP en de doorgroei naar productie  
-Versie: 1.1
+Versie: 1.2
 Laatst bijgewerkt: 22 september 2026
 
 ## 1. Doel van dit document
@@ -74,7 +74,7 @@ Vertrouwensgrenzen:
 
 ## 5. Huidige runtime-architectuur
 
-De MVP is een server-side Next.js-applicatie met een dunne browserlaag. Mutaties lopen via Server Actions; downloads en CSV-export via Route Handlers.
+De MVP gebruikt Next.js uitsluitend als server-renderende webinterface en dunne BFF. Server Actions en Route Handlers roepen de FastAPI-backend aan; zij bevatten geen databasequeries, documentparsing of domeinbesluiten.
 
 ```mermaid
 flowchart TB
@@ -84,28 +84,33 @@ flowchart TB
       SA[Server Actions]
       RH[Route Handlers]
       UI[UI-componenten]
+    end
+    subgraph PY[Python / FastAPI]
+      API[REST API v1]
+      DOM[Domein- en workflowsservices]
       EX[RequirementExtractor]
       MA[EvidenceMatcher]
       TXT[PDF / DOCX / TXT parsing]
+      ORM[SQLAlchemy]
     end
-    P[Prisma ORM]
-    S[(SQLite)]
-    L[(storage/uploads/projectId)]
+    S[(PostgreSQL)]
+    L[(Private uploadvolume)]
     O[OpenAI Responses API optioneel]
 
     B --> RSC
     B --> SA
     B --> RH
     RSC --> UI
-    SA --> EX
-    SA --> MA
-    SA --> TXT
-    RSC --> P
-    SA --> P
-    RH --> P
-    P --> S
-    SA --> L
-    RH --> L
+    RSC --> API
+    SA --> API
+    RH --> API
+    API --> DOM
+    DOM --> EX
+    DOM --> MA
+    DOM --> TXT
+    DOM --> ORM
+    ORM --> S
+    TXT --> L
     EX -. adapter .-> O
     MA -. adapter .-> O
 ```
@@ -114,18 +119,17 @@ flowchart TB
 
 | Laag | Huidige keuze | Verantwoordelijkheid |
 |---|---|---|
-| Web | Next.js 16, React 19, App Router | pagina's, Server Components, Server Actions en API-routes |
-| Taal | TypeScript | types en applicatielogica |
+| Web | Next.js 16, React 19, App Router | pagina's, Server Components, dunne Server Actions en downloadproxy's |
+| Frontendtaal | TypeScript | UI, formulieren en gegenereerde API-typen |
 | Styling | Tailwind CSS 4 | responsive zakelijke interface |
-| Data | Prisma 6 | schema en databasequeries |
-| Database | SQLite | lokale relationele opslag |
+| API en domein | Python 3.12, FastAPI en Pydantic | alle workflows, validatie en domeinregels |
+| Data | SQLAlchemy 2 en Alembic | persistence en migraties |
+| Database | PostgreSQL 16 | enige relationele bron van waarheid |
 | Bestanden | lokale private map | uploads buiten `public/` |
 | Extractie | lokale parsers + heuristiek | tekst en eisen herkennen |
 | Matching | lokale overlap-/regelmatcher | bewijsvoorstellen berekenen |
 | Optionele AI | OpenAI Responses API-adapters | alternatieve extractie en matching |
-| Tests | Vitest en Playwright | domein-, integratie- en browsercontrole |
-
-Deze tabel beschrijft de bestaande MVP, niet de definitieve backendkeuze. De huidige Server Actions, Prisma-queries en TypeScript-domeinfuncties worden gefaseerd naar Python gemigreerd; er komt geen tweede permanente implementatie van dezelfde domeinregel.
+| Tests | Pytest, Vitest en Playwright | API-, domein-, integratie- en browsercontrole |
 
 ### Vastgestelde doelstack
 
@@ -146,18 +150,20 @@ FastAPI is de standaardkeuze omdat het een getypeerd OpenAPI-contract, Pydantic-
 
 ### Implementatiestatus Pythonmigratie
 
-De eerste verticale slice is gerealiseerd:
+De volledige MVP-kernworkflow is gemigreerd:
 
 - `services/api` bevat FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest, Ruff en mypy;
 - PostgreSQL, FastAPI en Next.js starten gezamenlijk via Docker Compose;
-- `/health`, `/ready`, `GET /api/v1/projects`, `POST /api/v1/projects` en `GET /api/v1/projects/{id}` zijn beschikbaar;
-- projectaanmaak schrijft Project, Metrics en AuditEvent transactioneel in de Python-backend;
+- `/health`, `/ready` en de versieerbare project-, document-, eis-, bewijs-, match-, beoordeling- en export-API's zijn beschikbaar;
+- projectaanmaak, documenten, eisen, bewijs, voorstellen, menselijke beoordelingen, taken, metrics en audit staan in PostgreSQL;
+- PDF-, DOCX- en TXT-parsing, heuristische extractie en lexicale matching draaien in Python;
+- private uploads worden uitsluitend door FastAPI geschreven en projectgebonden opgehaald;
 - idempotency keys voorkomen dubbele projecten bij een herhaalde create-request;
 - FastAPI genereert `services/api/openapi.json`; `openapi-typescript` genereert de clienttypen voor Next.js;
-- dashboard en projectformulier gebruiken de Python-API als bron van waarheid;
+- alle werkruimtetabs, het dashboard en het projectformulier gebruiken de Python-API als bron van waarheid;
 - CI controleert Python, Alembic, OpenAPI, TypeScript en de Next.js-build.
 
-Tijdens de migratie wordt een nieuw Python-project tijdelijk als Prisma-project geprojecteerd, zodat de nog niet gemigreerde document- en matrixmodules blijven functioneren. Deze projectie heeft hetzelfde id, bevat geen zelfstandige projectregels en wordt verwijderd zodra de documentmodule naar Python is overgezet. Nieuwe domeinfunctionaliteit wordt niet meer in deze compatibiliteitslaag gebouwd.
+De Prisma-client, het SQLite-schema en de TypeScript-implementaties van extractie en matching zijn verwijderd. Het OpenAPI-contract is de enige frontend-backendgrens. Lokale adapters werken altijd; optionele OpenAI-adapters vallen aantoonbaar terug naar lokale verwerking.
 
 ## 6. Logische modules
 
@@ -177,7 +183,7 @@ De bestaande code is nog compact. De bedoelde grenzen zijn:
 | Identity, toekomstig | organisatie, gebruiker, rollen en sessies | `Organization`, `User`, `Membership` |
 | Ownership, toekomstig | beheerder koppelt per inhoudelijk domein de bevoegde eigenaar | `OrganizationDomain`, `DomainOwnership` |
 
-Gewenste repository-indeling na de Pythonmigratie:
+Gewenste repository-indeling bij verdere modularisering:
 
 ```text
 apps/
@@ -205,7 +211,7 @@ packages/
   api-client/                  uit OpenAPI gegenereerde TypeScript-client
 ```
 
-`app/actions.ts` is voor de huidige MVP bruikbaar, maar wordt geen permanent domeincentrum. Na migratie roept een Server Action uitsluitend de Python-API aan via de gegenereerde client en vertaalt hij het resultaat naar de UI. Next.js maakt geen directe databaseverbinding, schrijft geen bestanden en bepaalt geen beoordelings- of autorisatiebeleid.
+`app/actions.ts` bevat uitsluitend dunne API-aanroepen en vertaalt resultaten naar de UI. Next.js maakt geen directe databaseverbinding, schrijft geen bestanden en bepaalt geen beoordelings- of autorisatiebeleid.
 
 ## 7. Huidig datamodel en relaties
 
@@ -359,7 +365,7 @@ Adapters:
 - lokaal lexicaal en OpenAI voor matching;
 - lokale filesystemopslag voor development;
 - S3-compatibele private objectopslag voor productie;
-- SQLite voor lokale MVP en PostgreSQL voor productie.
+- PostgreSQL voor zowel de lokale Docker-MVP als productie.
 
 Een adapter mag geen domeinbesluit nemen. De regel dat AI nooit definitief “voldoende” vaststelt blijft in de applicatieservice.
 
@@ -395,7 +401,7 @@ Niet beoordeeld, mogelijk passend, gedeeltelijk, onvoldoende en ontbrekend telle
 
 ### Huidige MVP
 
-- SQLite in een lokaal databasebestand;
+- PostgreSQL in een persistent Docker-volume;
 - bestanden onder `storage/uploads/<projectId>/<uuid>.<ext>`;
 - uploads staan buiten `public/` en buiten Git;
 - downloadroute controleert project-id plus document-id.
@@ -570,10 +576,10 @@ GitHub Pages kan alleen de statische marketing-/pitchsite hosten. De werkende ap
 Huidige GitHub Actions-controle:
 
 1. dependencies installeren;
-2. Prisma-client/schema voorbereiden;
-3. TypeScript controleren;
-4. tests uitvoeren;
-5. productiebuild maken.
+2. Ruff en mypy uitvoeren;
+3. Pytest en Alembic tegen PostgreSQL uitvoeren;
+4. OpenAPI-specificatie en TypeScript-client op drift controleren;
+5. TypeScript, unit-tests, productiebuild en Playwright uitvoeren.
 
 Productie-uitbreiding:
 
@@ -624,9 +630,9 @@ Iedere request en achtergrondtaak krijgt een correlation-id. Alerts zijn actiege
 
 | Prioriteit | Bevinding | Gevolg | Besluit |
 |---|---|---|---|
-| Hoog | huidige backendlogica staat in Next.js/TypeScript | wijkt af van de gekozen Python-backend en kan tot dubbele domeinlogica leiden | per verticale workflow naar FastAPI migreren; daarna TypeScript-implementatie verwijderen |
+| Opgelost | dubbele Prisma-/TypeScript-backend | twee bronnen van waarheid | Prisma en SQLite verwijderd; FastAPI/PostgreSQL is gezaghebbend |
 | Hoog | upload wordt vóór databasecommit opgeslagen | verweesde bestanden bij fout | uploadstatus + compensatie/reconciliatie |
-| Hoog | beoordeling, eisstatus, taak en audit zijn losse writes | gedeeltelijke updates | één databasetransactie |
+| Opgelost | beoordeling, eisstatus, taak en audit waren losse writes | gedeeltelijke updates | de samengestelde beoordeling wordt in één SQLAlchemy-transactie gecommit |
 | Hoog | `Requirement.status` dupliceert `Assessment.status` | statusdrift | Assessment gezaghebbend; status afleiden |
 | Hoog | geen auth of tenantmodel | ongeschikt voor echte data | Organization/User/Membership vóór pilot |
 | Hoog | alleen extensiecontrole | vermomde of schadelijke upload | magic bytes, MIME en malwarecheck |
@@ -635,7 +641,7 @@ Iedere request en achtergrondtaak krijgt een correlation-id. Alerts zijn actiege
 | Middel | één match per Assessment | meerdere bewijsstukken niet goed beoordeelbaar | `AssessmentEvidence` koppeltabel |
 | Middel | tags als kommagescheiden tekst | slechte filtering en integriteit | `Tag` + koppeltabel of JSON/array in Postgres |
 | Middel | matcher bevat organisatieaanname in code | foutieve scopewaarschuwing | vergelijken met project-/organisatiecontext |
-| Middel | AI-fallback niet zichtbaar in audit | beperkte uitlegbaarheid | `ProcessingRun` met engine en fallback |
+| Opgelost voor MVP | AI-fallback was niet zichtbaar | beperkte uitlegbaarheid | gebruikte engine of fallback wordt in het auditlog vastgelegd; later uitbreiden met `ProcessingRun` |
 | Middel | auditlog is wijzigbaar en cascadeerbaar | zwakkere bewijswaarde | append-only beleid en aparte retentie |
 | Laag | grote acties in één bestand | afnemende onderhoudbaarheid | per module applicatieservices en validators |
 
@@ -661,7 +667,7 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 
 ## 22. Migratiepad
 
-### Fase 0 — betrouwbare demo
+### Fase 0 — betrouwbare demo — afgerond
 
 - huidige end-to-endflow stabiel houden;
 - architectuurregels en demo-scenario's vastleggen;
@@ -670,14 +676,16 @@ Een vector database wordt niet vooraf ingevoerd. PostgreSQL full-text search en 
 - `/health`, `/ready` en OpenAPI-clientgeneratie toevoegen;
 - geen nieuwe domeinlogica meer aan Next.js toevoegen.
 
-### Fase 1 — Python-backendmigratie
+### Fase 1 — Python-backendmigratie — afgerond voor de MVP-kernworkflow
 
 - schema en repositories naar SQLAlchemy/PostgreSQL migreren;
 - verticale workflows één voor één overzetten: project → documenten → eisen → bewijs → matching → beoordeling → export;
 - per workflow contract- en regressietests toevoegen;
 - Next Server Actions reduceren tot API-aanroepen;
 - oude Prisma- en TypeScript-domeinlogica na datavalidatie verwijderen;
-- transacties, engine/fallback en uploadcompensatie in Python implementeren.
+- engine/fallback in Python implementeren.
+
+Nog open uit deze fase: uploadcompensatie, expliciete transactieboundaries per samengestelde mutatie en statusnormalisatie naar uitsluitend Assessment als beslisbron.
 
 ### Fase 2 — pilotklaar
 
@@ -785,14 +793,14 @@ De volgende vragen zijn niet blokkerend voor de huidige MVP, maar moeten vóór 
 
 ## 26. Eerstvolgende technische stappen
 
-1. Scaffold `services/api` met FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest, Ruff en mypy.
-2. Voeg lokale orchestration en healthchecks toe, zodat frontend, Python-API en database met één gedocumenteerde opdracht starten.
-3. Leg OpenAPI-clientgeneratie vast en laat Next.js uitsluitend via die client communiceren.
-4. Migreer eerst de complete projectworkflow en daarna documenten, eisen, bewijs, matching, beoordeling en export als afzonderlijke verticale slices.
-5. Voeg tijdens de migratie `Organization`, ownership, `ProjectEvidence`, `ProcessingRun`, fragmentprovenance en transactionele audit toe; verwijder iedere vervangen Prisma/TypeScript-implementatie direct na regressiecontrole.
+1. Voeg `Organization`, `User`, `Membership` en beheerdergestuurd domeineigenaarschap toe.
+2. Maak de bewijsbibliotheek organisatiebreed via `ProjectEvidence` en documentversies.
+3. Voeg `ProcessingRun`, documentfragmenten en volledige fragmentprovenance toe.
+4. Maak uploads compensabel en voeg magic-bytevalidatie plus malware-scanning toe.
+5. Voeg assessmentrevisies, meerdere bewijsstukken per besluit en vier-ogen-goedkeuring toe.
 
 ## 27. Samenvatting
 
-Aantoonbaar is nu een bruikbare lokale Next.js/Prisma-MVP waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch zijn gescheiden. De belangrijkste productregel—automatisering adviseert, de mens beslist—is al zichtbaar in het datamodel. Deze TypeScript-backend is een migratiebron en niet de blijvende backendarchitectuur.
+Aantoonbaar is nu een bruikbare lokale Next.js/FastAPI/PostgreSQL-MVP waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch en technisch zijn gescheiden. Python is de enige backend; Next.js heeft geen directe database- of opslagtoegang. De belangrijkste productregel—automatisering adviseert, de mens beslist—is zichtbaar in datamodel, API en interface.
 
 De vastgestelde doorgroei is een Next.js-frontend boven één modulaire Python/FastAPI-backend met PostgreSQL, private EU/EER-objectopslag en Python-workers uit dezelfde domeinkern. Sterke tenantisolatie, een organisatiebrede bewijsbibliotheek, beheerdergestuurd domeineigenaarschap, versioned provenance en append-only audit maken het fundament geschikt voor vertrouwelijke zakelijke dossiers zonder vroegtijdig naar microservices te gaan.

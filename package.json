@@ -5,19 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "dev:stack": "docker compose up --build",
+    "dev:stack": "bash scripts/dev-stack.sh",
     "build": "next build",
     "start": "next start",
-    "db:setup": "mkdir -p prisma && prisma generate && prisma db push",
-    "seed": "tsx prisma/seed.ts",
+    "db:setup": "docker compose run --rm --build api alembic upgrade head",
+    "seed": "docker compose run --rm api python -m app.seed",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "api:generate": "openapi-typescript services/api/openapi.json -o lib/api/schema.d.ts",
     "api:check": "npm run api:generate && git diff --exit-code -- services/api/openapi.json lib/api/schema.d.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -25,10 +22,7 @@
   "description": "",
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
-    "@prisma/client": "6.12.0",
-    "mammoth": "^1.12.3",
     "next": "^16.3.5",
-    "pdf-parse": "^2.4.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
@@ -44,7 +38,6 @@
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^29.1.1",
     "openapi-typescript": "^7.13.0",
-    "prisma": "6.12.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

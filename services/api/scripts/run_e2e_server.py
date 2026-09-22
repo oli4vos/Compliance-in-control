@@ -13,4 +13,4 @@ from app.main import app  # noqa: E402
 from app.modules.projects import models  # noqa: E402, F401
 
 Base.metadata.create_all(engine)
-uvicorn.run(app, host="127.0.0.1", port=8000)
+uvicorn.run(app, host="127.0.0.1", port=18000)
