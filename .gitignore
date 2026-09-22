@@ -9,6 +9,14 @@ test-results/
 coverage/
 *.log
 *.tsbuildinfo
+.venv/
+services/api/.venv/
+services/api/.pytest_cache/
+services/api/.mypy_cache/
+services/api/.ruff_cache/
+services/api/**/__pycache__/
+services/api/e2e.db*
+.python-version
 .codex-build/
 .codex-finalizer/
 .codex-output/

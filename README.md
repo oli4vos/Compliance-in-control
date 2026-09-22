@@ -8,9 +8,11 @@ De volledige technische samenhang, huidige risico's en productie-doelarchitectuu
 
 ## Technologie
 
-- Next.js 16 met App Router en TypeScript
+- Next.js 16 met App Router en TypeScript voor de frontend
 - React 19 en Tailwind CSS 4
-- Prisma 6 met SQLite
+- Python/FastAPI, Pydantic, SQLAlchemy en Alembic voor de nieuwe backend
+- PostgreSQL voor de gezaghebbende projectservice
+- Prisma 6 met SQLite als tijdelijke compatibiliteitslaag voor nog niet gemigreerde modules
 - Lokale, niet-publieke bestandsopslag in `storage/uploads/`
 - Lokale heuristische extractie en matching
 - Optionele OpenAI Responses API-adapters met automatische lokale terugval
@@ -18,27 +20,47 @@ De volledige technische samenhang, huidige risico's en productie-doelarchitectuu
 
 ## Installeren en starten
 
-Vereisten: Node.js 20+ en npm.
+Aanbevolen vereisten: Docker Desktop met Docker Compose. Start de volledige frontend, Python-API en PostgreSQL-database met één opdracht:
 
 ```bash
 npm install
-npm run db:setup
-npm run seed
-npm run dev
+npm run dev:stack
 ```
 
-Open daarna [http://localhost:3000](http://localhost:3000). `npm run db:setup` maakt de lokale SQLite-database aan en synchroniseert het schema. `npm run seed` laadt het fictieve Waterdam-demodossier opnieuw; een bestaand demodossier met referentie `WD-2026-041` wordt daarbij vervangen.
+Open daarna [http://localhost:3000](http://localhost:3000). De interactieve Python-API-documentatie staat op [http://localhost:8000/docs](http://localhost:8000/docs). Docker Compose voert de Alembic-migratie uit en laadt het fictieve Waterdam-demodossier in beide tijdelijke datalagen.
+
+Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
+
+Stoppen kan met `Ctrl+C`; verwijder alleen de lokale containervolumes wanneer u bewust alle lokale PostgreSQL-data wilt wissen:
+
+```bash
+docker compose down
+```
+
+Voor ontwikkeling zonder Docker moeten PostgreSQL en de twee processen afzonderlijk worden gestart. Gebruik daarbij `PYTHON_API_URL=http://127.0.0.1:8000` voor Next.js en een geldige `AANTOONBAAR_DATABASE_URL` voor FastAPI.
 
 ## Beschikbare opdrachten
 
 ```bash
 npm run dev          # ontwikkelserver op localhost:3000
+npm run dev:stack    # volledige stack: Next.js, FastAPI en PostgreSQL
 npm run build        # productiebuild en TypeScript-controle
 npm run db:setup     # Prisma-client genereren en SQLite-schema synchroniseren
 npm run seed         # synthetische demo-data laden
 npm test             # unit- en domeintests
 npm run test:e2e     # Playwright end-to-endtest
 npm run typecheck    # alleen TypeScript-controle
+npm run api:generate # TypeScript-typen opnieuw genereren uit OpenAPI
+```
+
+Python-controles:
+
+```bash
+python3 -m venv services/api/.venv
+services/api/.venv/bin/pip install -e 'services/api[dev]'
+services/api/.venv/bin/ruff check services/api
+services/api/.venv/bin/mypy --config-file services/api/pyproject.toml services/api/app
+services/api/.venv/bin/pytest services/api
 ```
 
 Installeer vóór de eerste browsertest zo nodig Chromium met `npx playwright install chromium`.
@@ -87,8 +109,12 @@ npm test
 npm run test:e2e
 ```
 
+De Playwright-configuratie start voor lokale tests zowel FastAPI als Next.js. De aanvullende E2E-test controleert dat een dossier via FastAPI wordt aangemaakt, rechtstreeks in de API terugkomt en op het dashboard verschijnt.
+
 ## Bekende beperkingen
 
+- Alleen de projectlijst en projectaanmaak zijn al gezaghebbend naar Python/PostgreSQL gemigreerd. Documenten, eisen, bewijs, beoordelingen en exports gebruiken tijdelijk nog Prisma/SQLite.
+- Nieuwe Python-projecten krijgen tijdens deze overgang een Prisma-projectie met hetzelfde id, zodat de bestaande volledige werkruimte blijft functioneren. Deze projectie wordt verwijderd na migratie van de documentmodule.
 - PDF-paginareferenties zijn afhankelijk van wat de PDF-parser betrouwbaar kan uitlezen; DOCX en TXT gebruiken alineareferenties.
 - De lokale matcher gebruikt trefwoorden en tekstoverlap, geen semantische vectorzoekmachine.
 - Demo-documenten bestaan als database-inhoud; hun fictieve bronbestanden worden niet op schijf gezet.
@@ -98,8 +124,8 @@ npm run test:e2e
 
 ## Vervolg richting productie
 
-1. Voeg organisatie- en rolgebaseerde authenticatie, autorisatie en tenantisolatie toe.
-2. Introduceer versleutelde objectopslag, malware-scanning, back-ups en aantoonbaar retentiebeleid.
-3. Voeg een documentviewer toe met robuuste paginacoördinaten en annotaties.
-4. Maak auditlogs append-only en voeg review-/vier-ogenworkflows toe.
+1. Migreer documenten en private bestandsopslag als volgende verticale Python-slice.
+2. Migreer eisen, bewijs, matching, beoordeling en export en verwijder daarna Prisma/SQLite.
+3. Voeg organisatie- en rolgebaseerde authenticatie, ownership policies en tenantisolatie toe.
+4. Introduceer versleutelde objectopslag, malware-scanning, back-ups en aantoonbaar retentiebeleid.
 5. Voer securitytests, privacy-impactanalyse, toegankelijkheidsaudit en gecontroleerde deployment uit.

@@ -6,6 +6,7 @@ import { addRequirementAction, deleteRequirementAction, extractRequirementsActio
 import { ConfirmButton, SubmitButton } from "@/components/submit-button";
 import { ExpiryBadge, StatusBadge } from "@/components/status";
 import { expiryState } from "@/lib/matching";
+import { getProject, type ProjectResponse } from "@/lib/api/client";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,11 @@ const tabs = [["overzicht","Overzicht"],["documenten","Aanbestedingsdocumenten"]
 export default async function ProjectPage({ params, searchParams }: { params: Promise<{id:string}>; searchParams: Promise<Record<string,string|undefined>> }) {
   const { id } = await params; const query = await searchParams; const tab = query.tab || "overzicht";
   const project = await db.project.findUnique({ where:{id}, include:{ sourceDocuments:true, evidenceDocuments:{orderBy:{uploadedAt:"desc"}}, requirements:{orderBy:{number:"asc"},include:{sourceDocument:true,matches:{orderBy:{score:"desc"},include:{evidenceDocument:true}},assessments:{orderBy:{updatedAt:"desc"}}}}, tasks:{orderBy:{deadline:"asc"}}, auditEvents:{orderBy:{createdAt:"desc"},take:150} } });
-  if(!project) notFound();
+  if(!project) {
+    const pythonProject = await getProject(id).catch(() => null);
+    if(!pythonProject) notFound();
+    return <PythonProjectOverview project={pythonProject}/>;
+  }
   return <main className="shell">
     <section className="page-head"><div><Link href="/" className="eyebrow">Dossiers / {project.reference || "zonder referentie"}</Link><h1 style={{marginTop:10}}>{project.name}</h1><p>{project.client} · {project.product} {project.productVersion} · verantwoordelijke {project.owner || "nog niet toegewezen"}</p></div><div style={{textAlign:"right"}}><span className="muted" style={{fontSize:12}}>Uiterste inleverdatum</span><div className="mono" style={{fontSize:18,fontWeight:700,color:"var(--navy)",marginTop:5}}>{project.dueDate?.toLocaleDateString("nl-NL") || "Niet vastgelegd"}</div></div></section>
     <nav className="tabs no-print" aria-label="Projectonderdelen">{tabs.map(([key,label])=><Link key={key} href={`/projecten/${id}?tab=${key}`} className={`tab ${tab===key?"tab-active":""}`}>{label}</Link>)}</nav>
@@ -30,6 +35,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 }
 
 type FullProject = Prisma.ProjectGetPayload<{include:{sourceDocuments:true,evidenceDocuments:true,requirements:{include:{sourceDocument:true,matches:{include:{evidenceDocument:true}},assessments:true}},tasks:true,auditEvents:true}}>;
+
+function PythonProjectOverview({project}:{project:ProjectResponse}) {
+  return <main className="shell"><section className="page-head"><div><Link href="/" className="eyebrow">Dossiers / {project.reference || "zonder referentie"}</Link><h1 style={{marginTop:10}}>{project.name}</h1><p>{project.client} · {project.product} {project.productVersion} · verantwoordelijke {project.owner || "nog niet toegewezen"}</p></div><div style={{textAlign:"right"}}><span className="muted" style={{fontSize:12}}>Uiterste inleverdatum</span><div className="mono" style={{fontSize:18,fontWeight:700,color:"var(--navy)",marginTop:5}}>{formatApiDate(project.dueDate)}</div></div></section><section className="panel panel-pad"><div className="eyebrow">Python-projectservice</div><h2 style={{marginTop:10}}>Dossier is veilig aangemaakt</h2><p className="muted">Dit dossier staat in de nieuwe FastAPI/PostgreSQL-backend. De document-, eisen- en matrixmodules worden per verticale slice gemigreerd. Zodra de tijdelijke projectie beschikbaar is, verschijnen de volledige werkruimtetabs automatisch.</p><div className="grid-2" style={{marginTop:22}}><Meta label="Opdrachtgever" value={project.client}/><Meta label="Referentie" value={project.reference}/><Meta label="Product" value={`${project.product} ${project.productVersion}`.trim()}/><Meta label="Eigenaar" value={project.owner}/></div><Link href="/" className="button button-primary" style={{marginTop:24}}>Terug naar dashboard</Link></section><div className="notice" style={{marginTop:20}}>{DISCLAIMER}</div></main>;
+}
+
+function formatApiDate(value:string|null|undefined){return value?new Date(`${value.slice(0,10)}T12:00:00`).toLocaleDateString("nl-NL"):"Niet vastgelegd"}
 
 function Overview({project}:{project:FullProject}) {
   const total=project.requirements.length, sufficient=project.requirements.filter(r=>r.status==="voldoende onderbouwd").length, partial=project.requirements.filter(r=>r.status==="gedeeltelijk onderbouwd").length, missing=project.requirements.filter(r=>["ontbrekend bewijs","onvoldoende onderbouwd"].includes(r.status)).length, unreviewed=project.requirements.filter(r=>["niet beoordeeld","mogelijk passend"].includes(r.status)).length;

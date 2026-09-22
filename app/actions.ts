@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { extractText, requirementExtractor, paragraphs, shortTitle, categorize } from "@/lib/extraction";
 import { evidenceMatcher } from "@/lib/matching";
@@ -15,17 +14,6 @@ const user = "Lokale gebruiker";
 
 function value(form: FormData, key: string) { return String(form.get(key) ?? "").trim(); }
 function dateValue(raw: string) { return raw ? new Date(`${raw}T12:00:00`) : null; }
-
-export async function createProjectAction(form: FormData) {
-  const name = value(form, "name");
-  const client = value(form, "client");
-  if (!name || !client) throw new Error("Projectnaam en opdrachtgever zijn verplicht.");
-  const project = await db.project.create({ data: {
-    name, client, reference: value(form, "reference"), dueDate: dateValue(value(form, "dueDate")), product: value(form, "product"), productVersion: value(form, "productVersion"), owner: value(form, "owner"), notes: value(form, "notes"),
-    auditEvents: { create: { action: "Dossier aangemaakt", entity: "Project", newValue: name, user } },
-  }});
-  redirect(`/projecten/${project.id}`);
-}
 
 async function saveUpload(projectId: string, file: File) {
   if (!file || file.size === 0) throw new Error("Kies een bestand.");

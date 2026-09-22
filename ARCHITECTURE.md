@@ -144,6 +144,21 @@ Deze tabel beschrijft de bestaande MVP, niet de definitieve backendkeuze. De hui
 
 FastAPI is de standaardkeuze omdat het een getypeerd OpenAPI-contract, Pydantic-validatie en een lichte async weblaag combineert. De domeinlaag blijft zo framework-onafhankelijk mogelijk, zodat FastAPI niet de plaats wordt waar bedrijfsregels wonen.
 
+### Implementatiestatus Pythonmigratie
+
+De eerste verticale slice is gerealiseerd:
+
+- `services/api` bevat FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest, Ruff en mypy;
+- PostgreSQL, FastAPI en Next.js starten gezamenlijk via Docker Compose;
+- `/health`, `/ready`, `GET /api/v1/projects`, `POST /api/v1/projects` en `GET /api/v1/projects/{id}` zijn beschikbaar;
+- projectaanmaak schrijft Project, Metrics en AuditEvent transactioneel in de Python-backend;
+- idempotency keys voorkomen dubbele projecten bij een herhaalde create-request;
+- FastAPI genereert `services/api/openapi.json`; `openapi-typescript` genereert de clienttypen voor Next.js;
+- dashboard en projectformulier gebruiken de Python-API als bron van waarheid;
+- CI controleert Python, Alembic, OpenAPI, TypeScript en de Next.js-build.
+
+Tijdens de migratie wordt een nieuw Python-project tijdelijk als Prisma-project geprojecteerd, zodat de nog niet gemigreerde document- en matrixmodules blijven functioneren. Deze projectie heeft hetzelfde id, bevat geen zelfstandige projectregels en wordt verwijderd zodra de documentmodule naar Python is overgezet. Nieuwe domeinfunctionaliteit wordt niet meer in deze compatibiliteitslaag gebouwd.
+
 ## 6. Logische modules
 
 De bestaande code is nog compact. De bedoelde grenzen zijn:

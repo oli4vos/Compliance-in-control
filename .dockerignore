@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env*
+!.env.example
+prisma/dev.db*
+storage/uploads
+test-results
+playwright-report
+coverage
+.codex-*
+.chart-data-*
+services/api/.venv
+services/api/.pytest_cache
+services/api/**/__pycache__
