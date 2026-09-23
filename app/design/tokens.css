@@ -1,0 +1,38 @@
+/* IPC design layer: one source for visual roles used across every surface. */
+:root {
+  --canvas: #f1f3ef;
+  --surface: #ffffff;
+  --surface-muted: #e9efeb;
+  --ink: #17232b;
+  --ink-strong: #102f45;
+  --ink-muted: #64727c;
+  --ink-subtle: #87939a;
+  --line: #cbd5d0;
+  --line-soft: #dce4e8;
+  --accent: #527665;
+  --accent-soft: #e7f0eb;
+  --focus: #26698e;
+  --status-good: #31634a;
+  --status-review: #80600c;
+  --status-bad: #9a352d;
+  --status-neutral: #65727a;
+  --status-proposal: #265e7a;
+  --radius-control: 4px;
+  --radius-surface: 6px;
+  --shadow-focus: 0 5px 0 rgba(16, 47, 69, .16);
+  --font-ui: Geist, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html { background: var(--canvas); }
+body { color: var(--ink); background: var(--canvas); font-family: var(--font-ui); }
+.mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.eyebrow { color: var(--accent); }
+.panel { background: var(--surface); border-color: var(--line-soft); border-radius: var(--radius-surface); box-shadow: none; }
+.button { border-radius: var(--radius-control); }
+.button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--focus) 30%, transparent); outline-offset: 3px; }
+.status-good { color: var(--status-good); background: var(--accent-soft); }
+.status-partial { color: var(--status-review); }
+.status-bad { color: var(--status-bad); }
+.status-neutral { color: var(--status-neutral); }
+.status-proposal { color: var(--status-proposal); }
