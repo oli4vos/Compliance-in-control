@@ -226,3 +226,39 @@ body { background: #f1f3ef; }
   .workflow-grid { grid-template-columns: 1fr; }
   .workflow-grid article:first-child { grid-row: auto; min-height: 0; }
 }
+
+/* Structured redesign: sequence is used only where it carries meaning. */
+.pitch-page { counter-reset: pitch-section; }
+.pitch-block { counter-increment: pitch-section; grid-template-columns: 176px minmax(0, 1fr); padding-top: 44px; padding-bottom: 48px; }
+.pitch-label { position: relative; padding-left: 18px; border-left: 2px solid var(--accent); line-height: 1.35; }
+.pitch-label::before { content: counter(pitch-section, decimal-leading-zero) " · "; color: var(--ink-subtle); font-family: var(--font-data); font-weight: 500; letter-spacing: 0; }
+.pitch-block h2 { max-width: 760px; font-size: clamp(26px, 3vw, 38px); text-wrap: balance; }
+.pitch-block p { max-width: 66ch; }
+.capability-grid { grid-template-columns: 1.25fr .9fr .9fr; gap: 28px; }
+.capability { padding: 18px 0 0; border-top-width: 1px; }
+.capability > span { color: var(--ink-subtle); font-family: var(--font-data); }
+.model-line { grid-template-columns: 1.25fr .9fr .9fr; gap: 28px; }
+.scenario-table { border-top: 2px solid var(--ink-strong); }
+.scenario-focus { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.scenario-row { padding: 20px 14px; }
+.stats { border-radius: var(--radius-surface); border-color: var(--line-soft); box-shadow: none; }
+.stat { padding: 24px 20px; }
+.stat-value { font-size: 30px; }
+.tabs { border-bottom: 2px solid var(--line); }
+.tab { padding: 14px 12px 12px; }
+.tab-active { border-bottom-width: 3px; }
+.table-wrap { border-radius: var(--radius-surface); }
+table { background: var(--surface); }
+th { position: sticky; top: 0; z-index: 2; background: var(--surface-muted); color: var(--ink-muted); }
+td:first-child, th:first-child { padding-left: 20px; }
+td:last-child, th:last-child { padding-right: 20px; }
+.list-row { padding: 19px 20px; }
+.section-index { padding-left: 14px; border-left: 2px solid var(--accent); }
+.demo-guide li { border-top-color: var(--line-soft); }
+.demo-guide li > span { color: var(--ink-subtle); }
+@media (max-width: 900px) {
+  .pitch-block { grid-template-columns: 1fr; gap: 18px; }
+  .pitch-label { width: max-content; }
+  .capability-grid, .model-line { grid-template-columns: 1fr; gap: 18px; }
+  .stat { padding: 18px; }
+}
