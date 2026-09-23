@@ -19,6 +19,7 @@ function value(form: FormData, key: string) {
 
 function refresh(projectId: string) {
   revalidatePath("/");
+  revalidatePath("/dossiers");
   revalidatePath(`/projecten/${projectId}`);
   revalidatePath(`/projecten/${projectId}/dossier`);
 }

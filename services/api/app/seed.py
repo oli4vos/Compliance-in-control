@@ -2,7 +2,7 @@
 from datetime import date
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.config import get_settings
 from app.database import SessionLocal
@@ -243,137 +243,146 @@ STATUSES = {
 }
 
 
-def seed_demo() -> None:
+def seed_demo(session: Session | None = None, *, force: bool = False) -> None:
+    if session is not None:
+        _seed_demo(session, force=force)
+        return
     if not get_settings().auto_seed_demo:
         return
-    with SessionLocal() as session:
-        project = session.scalar(
-            select(Project)
-            .where(Project.id == DEMO_PROJECT_ID)
-            .options(
-                joinedload(Project.metrics),
-                selectinload(Project.source_documents),
-                selectinload(Project.requirements),
-                selectinload(Project.evidence_documents),
-                selectinload(Project.tasks),
-            )
+    with SessionLocal() as managed_session:
+        _seed_demo(managed_session, force=force)
+
+
+def _seed_demo(session: Session, *, force: bool = False) -> None:
+    project = session.scalar(
+        select(Project)
+        .where(Project.id == DEMO_PROJECT_ID)
+        .options(
+            joinedload(Project.metrics),
+            selectinload(Project.source_documents),
+            selectinload(Project.requirements),
+            selectinload(Project.evidence_documents),
+            selectinload(Project.tasks),
         )
-        if project and project.source_documents:
-            return
-        if project is None:
-            project = Project(
-                id=DEMO_PROJECT_ID,
-                name="AI-planningssoftware Gemeente Waterdam",
-                client="Gemeente Waterdam",
-                reference="WD-2026-041",
-                due_date=date(2026, 11, 16),
-                product="Planwijzer AI",
-                product_version="2.3",
-                owner="Eva de Vries",
-                notes="Fictief demonstratiedossier voor een Europese aanbesteding.",
-            )
-            project.metrics = ProjectMetrics()
-            session.add(project)
-            session.flush()
-        source = SourceDocument(
-            project_id=project.id,
-            name="Programma van Eisen Waterdam.txt",
-            stored_name="demo-pve.txt",
-            type="programma van eisen",
-            mime_type="text/plain",
-            extracted_text="\n\n".join(f"{item[4]} {item[2]}" for item in REQUIREMENTS),
-        )
-        ai_source = SourceDocument(
-            project_id=project.id,
-            name="AI- en privacyvragenlijst Waterdam.txt",
-            stored_name="demo-ai-vragenlijst.txt",
-            type="AI-vragenlijst",
-            mime_type="text/plain",
-            extracted_text="\n\n".join(f"{item[4]} {item[2]}" for item in REQUIREMENTS[3:9]),
-        )
-        session.add_all([source, ai_source])
+    )
+    if project and project.source_documents and not force:
+        return
+    if project and force:
+        session.delete(project)
         session.flush()
-        ai_numbers = {"E-004", "E-005", "E-007", "E-008", "E-009", "E-011"}
-        requirements = [
-            Requirement(
-                project_id=project.id,
-                source_document_id=ai_source.id if number in ai_numbers else source.id,
-                number=number,
-                title=title,
-                original_text=text,
-                category=category,
-                source_location=location,
-                source_fragment=text,
-                priority="verplicht",
-                origin="automatisch",
-                status=STATUSES[number],
-            )
-            for number, title, text, category, location in REQUIREMENTS
-        ]
-        evidence = [EvidenceDocument(project_id=project.id, **item) for item in EVIDENCE]
-        session.add_all(requirements)
-        session.add_all(evidence)
+        project = None
+    if project is None:
+        project = Project(
+            id=DEMO_PROJECT_ID,
+            name="AI-planningssoftware Gemeente Waterdam",
+            client="Gemeente Waterdam",
+            reference="WD-2026-041",
+            due_date=date(2026, 11, 16),
+            product="Planwijzer AI",
+            product_version="2.3",
+            owner="Eva de Vries",
+            notes="Fictief demonstratiedossier voor een Europese aanbesteding.",
+        )
+        project.metrics = ProjectMetrics()
+        session.add(project)
         session.flush()
-        for requirement in requirements:
-            for proposal in match_evidence(requirement, evidence, project):
-                session.add(
-                    EvidenceMatch(
-                        requirement_id=requirement.id,
-                        evidence_document_id=proposal.evidence_document_id,
-                        fragment=proposal.fragment,
-                        source_location=proposal.source_location,
-                        score=proposal.score,
-                        explanation=proposal.explanation,
-                        warnings=proposal.warnings,
-                    )
-                )
-            deadline = (
-                date(2026, 10, 15) if requirement.number in {"E-004", "E-009", "E-011"} else None
-            )
-            owner = (
-                "Mila van Dijk"
-                if requirement.category == "privacy"
-                else "Ravi de Boer"
-                if requirement.category == "AI en algoritmen"
-                else "Nora Smit"
-            )
+    source = SourceDocument(
+        project_id=project.id,
+        name="Programma van Eisen Waterdam.txt",
+        stored_name="demo-pve.txt",
+        type="programma van eisen",
+        mime_type="text/plain",
+        extracted_text="\n\n".join(f"{item[4]} {item[2]}" for item in REQUIREMENTS),
+    )
+    ai_source = SourceDocument(
+        project_id=project.id,
+        name="AI- en privacyvragenlijst Waterdam.txt",
+        stored_name="demo-ai-vragenlijst.txt",
+        type="AI-vragenlijst",
+        mime_type="text/plain",
+        extracted_text="\n\n".join(f"{item[4]} {item[2]}" for item in REQUIREMENTS[3:9]),
+    )
+    session.add_all([source, ai_source])
+    session.flush()
+    ai_numbers = {"E-004", "E-005", "E-007", "E-008", "E-009", "E-011"}
+    requirements = [
+        Requirement(
+            project_id=project.id,
+            source_document_id=ai_source.id if number in ai_numbers else source.id,
+            number=number,
+            title=title,
+            original_text=text,
+            category=category,
+            source_location=location,
+            source_fragment=text,
+            priority="verplicht",
+            origin="automatisch",
+            status=STATUSES[number],
+        )
+        for number, title, text, category, location in REQUIREMENTS
+    ]
+    evidence = [EvidenceDocument(project_id=project.id, **item) for item in EVIDENCE]
+    session.add_all(requirements)
+    session.add_all(evidence)
+    session.flush()
+    for requirement in requirements:
+        for proposal in match_evidence(requirement, evidence, project):
             session.add(
-                Assessment(
+                EvidenceMatch(
                     requirement_id=requirement.id,
-                    status=requirement.status,
-                    draft_answer="Nog op te stellen antwoord."
-                    if requirement.status == "ontbrekend bewijs"
-                    else "Zie gekoppelde bewijsstukken en bronfragmenten.",
-                    notes="Aanvullend, scopespecifiek bewijs opvragen."
-                    if deadline
-                    else "Menselijk gecontroleerd in de demo.",
-                    owner=owner,
-                    deadline=deadline,
-                    approved=requirement.status == "voldoende onderbouwd",
+                    evidence_document_id=proposal.evidence_document_id,
+                    fragment=proposal.fragment,
+                    source_location=proposal.source_location,
+                    score=proposal.score,
+                    explanation=proposal.explanation,
+                    warnings=proposal.warnings,
                 )
             )
-            if deadline:
-                task = Task(
-                    project_id=project.id,
-                    requirement_id=requirement.id,
-                    title=f"Beoordeling afronden voor {requirement.number}",
-                    owner=owner,
-                    deadline=deadline,
-                )
-                project.tasks.append(task)
-                session.add(task)
-        project.requirements = requirements
-        refresh_metrics(project)
+        deadline = date(2026, 10, 15) if requirement.number in {"E-004", "E-009", "E-011"} else None
+        owner = (
+            "Mila van Dijk"
+            if requirement.category == "privacy"
+            else "Ravi de Boer"
+            if requirement.category == "AI en algoritmen"
+            else "Nora Smit"
+        )
         session.add(
-            AuditEvent(
-                project_id=project.id,
-                action="Demodossier geladen",
-                entity=f"Project:{project.id}",
-                new_value="Synthetische Python/PostgreSQL-demo-inhoud",
-                actor="Systeem",
+            Assessment(
+                requirement_id=requirement.id,
+                status=requirement.status,
+                draft_answer="Nog op te stellen antwoord."
+                if requirement.status == "ontbrekend bewijs"
+                else "Zie gekoppelde bewijsstukken en bronfragmenten.",
+                notes="Aanvullend, scopespecifiek bewijs opvragen."
+                if deadline
+                else "Menselijk gecontroleerd in de demo.",
+                owner=owner,
+                deadline=deadline,
+                approved=requirement.status == "voldoende onderbouwd",
             )
         )
-        session.commit()
+        if deadline:
+            task = Task(
+                project_id=project.id,
+                requirement_id=requirement.id,
+                title=f"Beoordeling afronden voor {requirement.number}",
+                owner=owner,
+                deadline=deadline,
+            )
+            project.tasks.append(task)
+            session.add(task)
+    project.requirements = requirements
+    refresh_metrics(project)
+    session.add(
+        AuditEvent(
+            project_id=project.id,
+            action="Demodossier geladen",
+            entity=f"Project:{project.id}",
+            new_value="Synthetische Python/PostgreSQL-demo-inhoud",
+            actor="Systeem",
+        )
+    )
+    session.commit()
 
 
 if __name__ == "__main__":

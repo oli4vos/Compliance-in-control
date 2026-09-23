@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Aantoonbaar — Bewijsdossiers", des
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="nl"><body>
-    <header className="topbar"><div className="topbar-inner"><Link href="/" className="brand"><span className="brand-mark" aria-hidden="true"/>Aantoonbaar</Link><nav className="topnav" aria-label="Hoofdnavigatie"><Link href="/" className="topnav-link">Dossiers</Link><Link href="/pitch" className="topnav-link topnav-accent">Investeerdersnotitie</Link></nav><span className="muted topbar-context" style={{fontSize:12}}>Lokale demo · standaardgebruiker</span></div></header>
+    <header className="topbar"><div className="topbar-inner"><Link href="/" className="brand"><span className="brand-mark" aria-hidden="true" />Aantoonbaar</Link><nav className="topnav" aria-label="Hoofdnavigatie"><Link href="/dossiers" className="topnav-link">Dossiers</Link><Link href="/demo" className="topnav-link topnav-accent">Demo-modus</Link><Link href="/pitch" className="topnav-link">Investeerders</Link></nav><span className="muted topbar-context" style={{ fontSize: 12 }}>Demo-identiteit · Eva de Vries</span></div></header>
     {children}
     <footer className="footer">Lokale MVP — niet bedoeld als productieklare beveiligings- of complianceomgeving.</footer>
   </body></html>;

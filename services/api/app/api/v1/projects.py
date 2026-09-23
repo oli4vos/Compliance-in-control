@@ -49,6 +49,7 @@ from app.modules.projects.workspace import (
     save_assessment,
     update_requirement,
 )
+from app.seed import seed_demo
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
@@ -56,6 +57,16 @@ DISCLAIMER = (
     "Aantoonbaar ondersteunt de voorbereiding en beoordeling van bewijsdossiers. "
     "Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving."
 )
+
+
+@router.post("/demo/reset", response_model=MutationResult)
+def demo_reset(session: DatabaseSession) -> MutationResult:
+    if get_settings().environment != "development":
+        raise HTTPException(
+            status_code=403, detail="Demo-reset is alleen beschikbaar in development."
+        )
+    seed_demo(session, force=True)
+    return MutationResult(count=1)
 
 
 def _date(value: str) -> date | None:

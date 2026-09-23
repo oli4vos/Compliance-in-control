@@ -15,7 +15,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const project = await getWorkspace(id).catch(() => null);
   if(!project) notFound();
   return <main className="shell">
-    <section className="page-head"><div><Link href="/" className="eyebrow">Dossiers / {project.reference || "zonder referentie"}</Link><h1 style={{marginTop:10}}>{project.name}</h1><p>{project.client} · {project.product} {project.productVersion} · verantwoordelijke {project.owner || "nog niet toegewezen"}</p></div><div style={{textAlign:"right"}}><span className="muted" style={{fontSize:12}}>Uiterste inleverdatum</span><div className="mono" style={{fontSize:18,fontWeight:700,color:"var(--navy)",marginTop:5}}>{formatDate(project.dueDate)}</div></div></section>
+    <section className="page-head"><div><Link href="/dossiers" className="eyebrow">Dossiers / {project.reference || "zonder referentie"}</Link><h1 style={{marginTop:10}}>{project.name}</h1><p>{project.client} · {project.product} {project.productVersion} · verantwoordelijke {project.owner || "nog niet toegewezen"}</p></div><div style={{textAlign:"right"}}><span className="muted" style={{fontSize:12}}>Uiterste inleverdatum</span><div className="mono" style={{fontSize:18,fontWeight:700,color:"var(--navy)",marginTop:5}}>{formatDate(project.dueDate)}</div></div></section>
     <nav className="tabs no-print" aria-label="Projectonderdelen">{tabs.map(([key,label])=><Link key={key} href={`/projecten/${id}?tab=${key}`} className={`tab ${tab===key?"tab-active":""}`}>{label}</Link>)}</nav>
     {tab === "overzicht" && <Overview project={project}/>} 
     {tab === "documenten" && <Sources project={project}/>} 

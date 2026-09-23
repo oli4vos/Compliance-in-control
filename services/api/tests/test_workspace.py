@@ -204,3 +204,12 @@ def test_removes_file_when_database_registration_fails(
         )
 
     assert not list(tmp_path.rglob("*"))
+
+
+def test_demo_reset_restores_synthetic_workspace(client: TestClient) -> None:
+    reset = client.post("/api/v1/projects/demo/reset")
+    assert reset.status_code == 200
+    workspace = client.get("/api/v1/projects/demo-waterdam/workspace")
+    assert workspace.status_code == 200
+    assert len(workspace.json()["requirements"]) == 11
+    assert workspace.json()["progress"] == 91

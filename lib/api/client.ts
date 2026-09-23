@@ -155,3 +155,7 @@ export function getCsvExport(projectId: string): Promise<Response> {
 export function getEvidenceFile(projectId: string, documentId: string): Promise<Response> {
   return requestResponse(`/api/v1/projects/${encodeURIComponent(projectId)}/evidence-documents/${encodeURIComponent(documentId)}/file`);
 }
+
+export function resetDemo() {
+  return request("/api/v1/projects/demo/reset", { method: "POST" });
+}

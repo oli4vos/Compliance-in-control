@@ -29,5 +29,6 @@ export async function createPythonProjectAction(form: FormData) {
   );
 
   revalidatePath("/");
+  revalidatePath("/dossiers");
   redirect(`/projecten/${project.id}`);
 }

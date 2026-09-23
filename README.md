@@ -28,6 +28,8 @@ npm run dev:stack
 
 Open daarna [http://localhost:3000](http://localhost:3000). De interactieve Python-API-documentatie van de Docker-stack staat op [http://localhost:8001/docs](http://localhost:8001/docs). Docker Compose voert de Alembic-migraties uit en laadt het fictieve Waterdam-demodossier in PostgreSQL.
 
+De publieke startpagina staat op `/`. Kies **Start interactieve demo** voor de transparante demo-identiteit Eva de Vries. De werkruimte staat op `/dossiers`; vanuit de demo kan het synthetische Waterdam-dossier altijd naar de beginsituatie worden teruggezet.
+
 Omdat het project in een iCloud-map staat, gebruikt Compose bewust ingebouwde images en Docker named volumes in plaats van macOS bind-mounts. PostgreSQL-data en private uploads blijven daardoor behouden bij een normale herbouw. Na een codewijziging voert u opnieuw `npm run dev:stack` uit om de images bij te werken.
 
 Stoppen kan met `Ctrl+C`; verwijder alleen de lokale containervolumes wanneer u bewust alle lokale PostgreSQL-data wilt wissen:
@@ -102,7 +104,7 @@ Dit is een lokale MVP, geen productieklare beveiligingsomgeving. Er is één sta
 
 ## Tests
 
-De tests dekken projectaanmaak, bestandstypevalidatie, TXT-upload, lokale eisenextractie, traceerbare matching, verlopen bewijs, menselijke beoordeling, taken, audit, CSV-export en de volledige browserworkflow.
+De tests dekken projectaanmaak, bestandstypevalidatie, TXT/PDF/DOCX-upload, lokale eisenextractie, traceerbare matching, verlopen bewijs, menselijke beoordeling, taken, audit, CSV-export, demo-reset en de volledige browserworkflow inclusief landing page en demo-modus.
 
 ```bash
 npm test

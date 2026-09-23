@@ -15,6 +15,6 @@ test("projecten worden via de Python-backend aangemaakt en getoond", async ({ pa
   const projects = await apiResponse.json() as Array<{ name: string }>;
   expect(projects.some((project) => project.name === name)).toBeTruthy();
 
-  await page.goto("/");
+  await page.goto("/dossiers");
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
 });

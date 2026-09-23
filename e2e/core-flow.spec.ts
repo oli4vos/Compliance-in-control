@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test("volledige kernworkflow", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/dossiers");
   await expect(page.getByRole("heading", { name: /Van uitvraag/ })).toBeVisible();
-  await page.getByRole("link", { name: "Nieuw dossier", exact: true }).click();
+  await page.getByRole("link", { name: "Nieuw dossier", exact: true }).first().click();
   await page.getByLabel("Projectnaam *", { exact: true }).fill("E2E controledossier");
   await page.getByLabel("Opdrachtgever *", { exact: true }).fill("Stichting Proeftuin");
   await page.getByLabel("Aangeboden product of dienst", { exact: true }).fill("Controlebox");
