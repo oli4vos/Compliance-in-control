@@ -90,14 +90,15 @@ Met een sleutel worden de verwisselbare Python-adapters voor extractie en matchi
 
 ## Bestands- en gegevensveiligheid
 
-- Alleen `.pdf`, `.docx` en `.txt` tot 10 MB worden geaccepteerd.
+- Alleen `.pdf`, `.docx` en `.txt` tot 10 MB worden geaccepteerd; extensie, opgegeven MIME-type en bestandsstructuur worden onderling gecontroleerd.
 - Bestandsnamen en dossier-id's worden ontsmet; opgeslagen bestanden krijgen een willekeurige naam.
+- Mislukte databaseregistraties ruimen het reeds opgeslagen uploadbestand automatisch op.
 - Uploads staan niet in `public/` en zijn uitgesloten van Git.
 - Een bestandsroute controleert altijd zowel project-id als document-id.
 - Geüploade inhoud wordt niet als vertrouwde HTML gerenderd en niet naar de console geschreven.
 - Secrets horen uitsluitend in `.env.local`; `.env*` en uploads staan in `.gitignore`.
 
-Dit is een lokale MVP, geen productieklare beveiligingsomgeving. Er is één standaardgebruiker, geen authenticatie, geen encryptie-at-rest buiten wat het lokale besturingssysteem biedt, geen malware-scanning, geen fijnmazige autorisatie en geen back-up- of retentiebeleid. Gebruik geen echte vertrouwelijke aanbestedingsinformatie voordat deze maatregelen zijn toegevoegd.
+Dit is een lokale MVP, geen productieklare beveiligingsomgeving. Er is één standaardgebruiker, geen authenticatie, geen encryptie-at-rest buiten wat het lokale besturingssysteem biedt, geen antivirus- of sandboxscan, geen fijnmazige autorisatie en geen back-up- of retentiebeleid. Gebruik geen echte vertrouwelijke aanbestedingsinformatie voordat deze maatregelen zijn toegevoegd.
 
 ## Tests
 

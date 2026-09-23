@@ -1,6 +1,13 @@
 from datetime import date, timedelta
+from io import BytesIO
+from pathlib import Path
 
+import pytest
+from docx import Document
 from fastapi.testclient import TestClient
+from pypdf import PdfWriter
+
+from app.core.config import get_settings
 
 
 def create_project(client: TestClient) -> str:
@@ -98,7 +105,9 @@ def test_complete_workspace_workflow_uses_python_storage(client: TestClient) -> 
     assert "geen juridisch oordeel" in csv_export.text
 
 
-def test_rejects_unsupported_or_oversized_upload(client: TestClient) -> None:
+def test_rejects_unsupported_or_oversized_upload(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_id = create_project(client)
     unsupported = client.post(
         f"/api/v1/projects/{project_id}/source-documents",
@@ -106,3 +115,92 @@ def test_rejects_unsupported_or_oversized_upload(client: TestClient) -> None:
         files={"file": ("script.html", b"<script>alert(1)</script>", "text/html")},
     )
     assert unsupported.status_code == 415
+
+    monkeypatch.setattr(get_settings(), "max_upload_bytes", 4)
+    oversized = client.post(
+        f"/api/v1/projects/{project_id}/source-documents",
+        data={"type": "overig"},
+        files={"file": ("notulen.txt", b"vijf!", "text/plain")},
+    )
+    assert oversized.status_code == 413
+
+
+def test_rejects_disguised_or_mismatched_upload(client: TestClient) -> None:
+    project_id = create_project(client)
+    disguised = client.post(
+        f"/api/v1/projects/{project_id}/source-documents",
+        data={"type": "overig"},
+        files={"file": ("notulen.txt", b"%PDF-1.7\n", "text/plain")},
+    )
+    assert disguised.status_code == 415
+    assert "TXT" in disguised.json()["detail"]
+
+    mismatched = client.post(
+        f"/api/v1/projects/{project_id}/source-documents",
+        data={"type": "overig"},
+        files={"file": ("notulen.txt", b"Veilige platte tekst", "application/pdf")},
+    )
+    assert mismatched.status_code == 415
+    assert "niet overeen" in mismatched.json()["detail"]
+
+
+def test_accepts_and_extracts_valid_docx(client: TestClient) -> None:
+    project_id = create_project(client)
+    stream = BytesIO()
+    document = Document()
+    document.add_paragraph("De leverancier moet toegang tot productieomgevingen beperken.")
+    document.save(stream)
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/source-documents",
+        data={"type": "programma van eisen"},
+        files={
+            "file": (
+                "eisen.docx",
+                stream.getvalue(),
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+    assert response.status_code == 201
+    assert "productieomgevingen beperken" in response.json()["extractedText"]
+    assert response.json()["mimeType"].endswith("wordprocessingml.document")
+
+
+def test_accepts_valid_pdf_structure(client: TestClient) -> None:
+    project_id = create_project(client)
+    stream = BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=595, height=842)
+    writer.write(stream)
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/source-documents",
+        data={"type": "privacybijlage"},
+        files={"file": ("bijlage.pdf", stream.getvalue(), "application/pdf")},
+    )
+    assert response.status_code == 201
+    assert response.json()["mimeType"] == "application/pdf"
+    assert "[[Pagina 1]]" in response.json()["extractedText"]
+
+
+def test_removes_file_when_database_registration_fails(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project_id = create_project(client)
+
+    def fail_registration(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("gesimuleerde databasefout")
+
+    monkeypatch.setattr(
+        "app.api.v1.projects.create_source_document",
+        fail_registration,
+    )
+    with pytest.raises(RuntimeError, match="gesimuleerde databasefout"):
+        client.post(
+            f"/api/v1/projects/{project_id}/source-documents",
+            data={"type": "overig"},
+            files={"file": ("notulen.txt", b"Geldige tekstinhoud", "text/plain")},
+        )
+
+    assert not list(tmp_path.rglob("*"))

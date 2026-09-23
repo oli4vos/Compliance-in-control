@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.database import get_db
-from app.modules.projects.documents import save_upload
+from app.modules.projects.documents import discard_upload, save_upload
 from app.modules.projects.models import EvidenceDocument
 from app.modules.projects.schemas import (
     AssessmentUpsert,
@@ -42,6 +42,7 @@ from app.modules.projects.workspace import (
     export_csv,
     extract_document_requirements,
     generate_matches,
+    get_project_model,
     get_workspace,
     merge_requirements,
     remove_requirement,
@@ -99,8 +100,15 @@ async def source_document_create(
     document_type: Annotated[str, Form(alias="type")],
     file: Annotated[UploadFile, File()],
 ) -> SourceDocumentResponse:
-    upload = await save_upload(project_id, file, get_settings())
-    document = create_source_document(session, project_id, document_type, upload)
+    settings = get_settings()
+    get_project_model(session, project_id)
+    upload = await save_upload(project_id, file, settings)
+    try:
+        document = create_source_document(session, project_id, document_type, upload)
+    except Exception:
+        session.rollback()
+        discard_upload(project_id, upload, settings)
+        raise
     return SourceDocumentResponse.model_validate(document)
 
 
@@ -167,24 +175,31 @@ async def evidence_document_create(
     confidentiality: Annotated[str, Form()] = "intern",
     tags: Annotated[str, Form()] = "",
 ) -> EvidenceDocumentResponse:
-    upload = await save_upload(project_id, file, get_settings())
-    document = create_evidence_document(
-        session,
-        project_id,
-        upload,
-        title=title,
-        document_type=document_type,
-        description=description,
-        organization=organization,
-        product=product,
-        product_version=product_version,
-        environment=environment,
-        owner=owner,
-        issued_at=_date(issued_at),
-        expires_at=_date(expires_at),
-        confidentiality=confidentiality,
-        tags=tags,
-    )
+    settings = get_settings()
+    get_project_model(session, project_id)
+    upload = await save_upload(project_id, file, settings)
+    try:
+        document = create_evidence_document(
+            session,
+            project_id,
+            upload,
+            title=title,
+            document_type=document_type,
+            description=description,
+            organization=organization,
+            product=product,
+            product_version=product_version,
+            environment=environment,
+            owner=owner,
+            issued_at=_date(issued_at),
+            expires_at=_date(expires_at),
+            confidentiality=confidentiality,
+            tags=tags,
+        )
+    except Exception:
+        session.rollback()
+        discard_upload(project_id, upload, settings)
+        raise
     return EvidenceDocumentResponse.model_validate(document)
 
 
@@ -206,7 +221,12 @@ def evidence_document_file(
     if upload_root not in file_path.parents or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Bestand is niet lokaal aanwezig.")
     download_name = re.sub(r'[\r\n"]', "_", document.file_name)
-    return FileResponse(file_path, media_type=document.mime_type, filename=download_name)
+    return FileResponse(
+        file_path,
+        media_type=document.mime_type,
+        filename=download_name,
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.post("/{project_id}/matches/generate", response_model=MutationResult)

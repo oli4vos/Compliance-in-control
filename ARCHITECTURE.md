@@ -631,11 +631,11 @@ Iedere request en achtergrondtaak krijgt een correlation-id. Alerts zijn actiege
 | Prioriteit | Bevinding | Gevolg | Besluit |
 |---|---|---|---|
 | Opgelost | dubbele Prisma-/TypeScript-backend | twee bronnen van waarheid | Prisma en SQLite verwijderd; FastAPI/PostgreSQL is gezaghebbend |
-| Hoog | upload wordt vóór databasecommit opgeslagen | verweesde bestanden bij fout | uploadstatus + compensatie/reconciliatie |
+| Opgelost voor MVP | upload wordt vóór databasecommit opgeslagen | verweesde bestanden bij fout | API verwijdert het bestand bij een mislukte databaseregistratie; productie krijgt daarnaast reconciliatie |
 | Opgelost | beoordeling, eisstatus, taak en audit waren losse writes | gedeeltelijke updates | de samengestelde beoordeling wordt in één SQLAlchemy-transactie gecommit |
 | Hoog | `Requirement.status` dupliceert `Assessment.status` | statusdrift | Assessment gezaghebbend; status afleiden |
 | Hoog | geen auth of tenantmodel | ongeschikt voor echte data | Organization/User/Membership vóór pilot |
-| Hoog | alleen extensiecontrole | vermomde of schadelijke upload | magic bytes, MIME en malwarecheck |
+| Opgelost voor MVP | alleen extensiecontrole | vermomde upload | extensie, MIME, PDF-header, DOCX-structuur/limieten en TXT-binaire inhoud worden gecontroleerd; malwarecheck blijft pilotwerk |
 | Middel | samenvoegen plakt bronfragmenten aan elkaar | provenance wordt onzuiver | `RequirementSource` many-to-many |
 | Middel | nummering gebruikt `count + 1` | collision na verwijderen/concurrentie | projectsequence of hoogste nummer + transactie |
 | Middel | één match per Assessment | meerdere bewijsstukken niet goed beoordeelbaar | `AssessmentEvidence` koppeltabel |
