@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Aantoonbaar API"
+    app_name: str = "IPC API"
     environment: str = "development"
     database_url: str = "sqlite:///./aantoonbaar-api.db"
     auto_seed_demo: bool = False

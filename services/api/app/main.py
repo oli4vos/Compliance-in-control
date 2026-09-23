@@ -12,7 +12,7 @@ settings = get_settings()
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description="Python-backend voor de Aantoonbaar eisen-bewijsmatrix.",
+    description="Python-backend voor de IPC eisen-bewijsmatrix.",
 )
 
 v1 = APIRouter(prefix="/api/v1")

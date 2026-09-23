@@ -1,7 +1,7 @@
 [project]
 name = "aantoonbaar-api"
 version = "0.1.0"
-description = "Gezaghebbende Python-backend voor Aantoonbaar"
+description = "Gezaghebbende Python-backend voor IPC"
 requires-python = ">=3.10"
 dependencies = [
   "alembic>=1.14,<2",

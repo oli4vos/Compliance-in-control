@@ -1,8 +1,8 @@
-# Aantoonbaar — financiële potentie en pitch
+# IPC — financiële potentie en pitch
 
 ## Kernpitch
 
-Aantoonbaar is de bewijslaag voor IT- en AI-leveranciers die sneller door aanbestedingen, securityreviews en klantuitvragen willen. Het product koppelt eisen aan bewijsstukken, houdt bronfragmenten traceerbaar en laat de menselijke beoordeling apart vastleggen.
+IPC is de bewijslaag voor IT- en AI-leveranciers die sneller door aanbestedingen, securityreviews en klantuitvragen willen. Het product koppelt eisen aan bewijsstukken, houdt bronfragmenten traceerbaar en laat de menselijke beoordeling apart vastleggen.
 
 De eerste wedge is niet “compliance automatiseren”. De wedge is herbruikbaar bewijs: één gecontroleerd stuk informatie kan in meerdere dossiers opnieuw worden gebruikt, met zicht op productversie, juridische entiteit, omgeving en geldigheid.
 

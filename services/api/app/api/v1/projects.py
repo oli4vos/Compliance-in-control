@@ -54,7 +54,7 @@ from app.seed import seed_demo
 router = APIRouter(prefix="/projects", tags=["projects"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
 DISCLAIMER = (
-    "Aantoonbaar ondersteunt de voorbereiding en beoordeling van bewijsdossiers. "
+    "IPC ondersteunt de voorbereiding en beoordeling van bewijsdossiers. "
     "Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving."
 )
 

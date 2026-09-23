@@ -1,6 +1,6 @@
-# Aantoonbaar
+# IPC
 
-Aantoonbaar is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen uit aanbestedingen, securityvragenlijsten en klantuitvragen willen koppelen aan controleerbare bewijsstukken. De app helpt bij ordenen en beoordelen; zij geeft geen juridisch oordeel, certificering of garantie van naleving.
+IPC is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen uit aanbestedingen, securityvragenlijsten en klantuitvragen willen koppelen aan controleerbare bewijsstukken. De app helpt bij ordenen en beoordelen; zij geeft geen juridisch oordeel, certificering of garantie van naleving.
 
 De volledige technische samenhang, huidige risico's en productie-doelarchitectuur staan in [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -38,7 +38,7 @@ Stoppen kan met `Ctrl+C`; verwijder alleen de lokale containervolumes wanneer u 
 docker compose down
 ```
 
-Voor ontwikkeling zonder Docker moeten PostgreSQL en de twee processen afzonderlijk worden gestart. Gebruik daarbij `PYTHON_API_URL=http://127.0.0.1:8000` voor Next.js en een geldige `AANTOONBAAR_DATABASE_URL` voor FastAPI.
+Voor ontwikkeling zonder Docker moeten PostgreSQL en de twee processen afzonderlijk worden gestart. Gebruik daarbij `PYTHON_API_URL=http://127.0.0.1:8000` voor Next.js en een geldige `<REBRAND>_DATABASE_URL` voor FastAPI.
 
 ## Beschikbare opdrachten
 

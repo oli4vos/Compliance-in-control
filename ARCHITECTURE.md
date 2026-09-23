@@ -1,4 +1,4 @@
-# Architectuurblauwdruk Aantoonbaar
+# Architectuurblauwdruk IPC
 
 Status: leidend technisch ontwerp voor de huidige MVP en de doorgroei naar productie  
 Versie: 1.2
@@ -6,7 +6,7 @@ Laatst bijgewerkt: 22 september 2026
 
 ## 1. Doel van dit document
 
-Dit document legt de samenhang van Aantoonbaar vast: het productdomein, de softwarecomponenten, gegevensstromen, opslag, beveiligingsgrenzen, tests, deployment en het groeipad naar een productieplatform. Het voorkomt dat de MVP ongemerkt de definitieve architectuur wordt.
+Dit document legt de samenhang van IPC vast: het productdomein, de softwarecomponenten, gegevensstromen, opslag, beveiligingsgrenzen, tests, deployment en het groeipad naar een productieplatform. Het voorkomt dat de MVP ongemerkt de definitieve architectuur wordt.
 
 De blauwdruk maakt steeds onderscheid tussen:
 
@@ -16,7 +16,7 @@ De blauwdruk maakt steeds onderscheid tussen:
 
 ## 2. Productgrens en kernbelofte
 
-Aantoonbaar ondersteunt Nederlandse IT- en AI-leveranciers bij het verzamelen, herleiden en menselijk beoordelen van bewijs voor eisen uit aanbestedingen en klantuitvragen.
+IPC ondersteunt Nederlandse IT- en AI-leveranciers bij het verzamelen, herleiden en menselijk beoordelen van bewijs voor eisen uit aanbestedingen en klantuitvragen.
 
 De applicatie doet wel:
 
@@ -36,7 +36,7 @@ De applicatie doet nadrukkelijk niet:
 
 De vaste disclaimer is daarom een domeinonderdeel, geen vrijblijvende UI-tekst:
 
-> Aantoonbaar ondersteunt de voorbereiding en beoordeling van bewijsdossiers. Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving.
+> IPC ondersteunt de voorbereiding en beoordeling van bewijsdossiers. Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving.
 
 ## 3. Architectuurprincipes
 
@@ -56,7 +56,7 @@ De vaste disclaimer is daarom een domeinonderdeel, geen vrijblijvende UI-tekst:
 
 ```mermaid
 flowchart LR
-    U[Leverancier / beoordelaar] -->|browser| A[Aantoonbaar]
+    U[Leverancier / beoordelaar] -->|browser| A[IPC]
     A -->|metadata en beslissingen| D[(Database)]
     A -->|private documenten| F[(Bestandsopslag)]
     A -. expliciete opt-in .-> AI[Externe AI-provider]
@@ -756,7 +756,7 @@ Een productieversie is pas verantwoord wanneer:
 - AI-gebruik expliciet, uitlegbaar en uitschakelbaar is;
 - monitoring, incidentproces en eigenaarschap zijn ingericht;
 - privacy-, beveiligings- en toegankelijkheidsbeoordelingen zijn uitgevoerd;
-- juridische teksten duidelijk maken dat Aantoonbaar ondersteunt maar niet certificeert.
+- juridische teksten duidelijk maken dat IPC ondersteunt maar niet certificeert.
 
 ## 25. Vastgestelde productkeuzes, aannames en open besluiten
 
@@ -801,6 +801,6 @@ De volgende vragen zijn niet blokkerend voor de huidige MVP, maar moeten vóór 
 
 ## 27. Samenvatting
 
-Aantoonbaar is nu een bruikbare lokale Next.js/FastAPI/PostgreSQL-MVP waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch en technisch zijn gescheiden. Python is de enige backend; Next.js heeft geen directe database- of opslagtoegang. De belangrijkste productregel—automatisering adviseert, de mens beslist—is zichtbaar in datamodel, API en interface.
+IPC is nu een bruikbare lokale Next.js/FastAPI/PostgreSQL-MVP waarin documenten, eisen, bewijsvoorstellen en menselijke beslissingen logisch en technisch zijn gescheiden. Python is de enige backend; Next.js heeft geen directe database- of opslagtoegang. De belangrijkste productregel—automatisering adviseert, de mens beslist—is zichtbaar in datamodel, API en interface.
 
 De vastgestelde doorgroei is een Next.js-frontend boven één modulaire Python/FastAPI-backend met PostgreSQL, private EU/EER-objectopslag en Python-workers uit dezelfde domeinkern. Sterke tenantisolatie, een organisatiebrede bewijsbibliotheek, beheerdergestuurd domeineigenaarschap, versioned provenance en append-only audit maken het fundament geschikt voor vertrouwelijke zakelijke dossiers zonder vroegtijdig naar microservices te gaan.

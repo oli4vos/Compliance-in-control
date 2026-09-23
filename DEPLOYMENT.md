@@ -2,7 +2,7 @@
 
 ## Belangrijk over GitHub Pages
 
-GitHub Pages serveert alleen statische HTML, CSS en JavaScript. Aantoonbaar is geen statische site: de app gebruikt een Next.js-frontend, een Python/FastAPI-backend, PostgreSQL en private bestandsverwerking. Daardoor kan de volledige MVP niet rechtstreeks op GitHub Pages draaien.
+GitHub Pages serveert alleen statische HTML, CSS en JavaScript. IPC is geen statische site: de app gebruikt een Next.js-frontend, een Python/FastAPI-backend, PostgreSQL en private bestandsverwerking. Daardoor kan de volledige MVP niet rechtstreeks op GitHub Pages draaien.
 
 ## Aanbevolen route
 
@@ -29,7 +29,7 @@ Maak dan een aparte statische investor-site of product-marketingpagina. De inter
 ```bash
 git init -b main
 git add .
-git commit -m "Initial Aantoonbaar MVP"
+git commit -m "Initial IPC MVP"
 git remote add origin https://github.com/<organisatie>/<repository>.git
 git push -u origin main
 ```

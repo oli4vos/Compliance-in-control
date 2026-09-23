@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Aantoonbaar API",
-    "description": "Python-backend voor de Aantoonbaar eisen-bewijsmatrix.",
+    "title": "IPC API",
+    "description": "Python-backend voor de IPC eisen-bewijsmatrix.",
     "version": "0.1.0"
   },
   "paths": {
