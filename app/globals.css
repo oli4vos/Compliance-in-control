@@ -195,3 +195,29 @@ details > summary::-webkit-details-marker { display:none; }
 @media (max-width:900px) { .shell,.topbar-inner{padding-left:18px;padding-right:18px}.page-head,.grid-wide,.split-detail{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stat{border-bottom:1px solid var(--line)}.grid-2{grid-template-columns:1fr}.list-row{grid-template-columns:1fr}.page-head{padding-top:34px}.topbar .muted{display:none} }
 @media (max-width:900px) { .topnav{margin-left:auto;margin-right:12px;gap:10px}.topnav-link{font-size:11px}.hero,.investor-strip,.pitch-hero,.pitch-ask,.pitch-block{grid-template-columns:1fr;gap:22px}.hero{padding-top:38px}.hero-aside{border-left:0;border-top:1px solid #b8c9c4;padding:18px 0 0}.signal-grid{border-left:0}.capability-grid,.model-line{grid-template-columns:1fr}.scenario-head,.scenario-row{grid-template-columns:1fr 1fr 1fr}.scenario-head span:nth-child(5),.scenario-row small{grid-column:1/-1}.pitch-block{padding:28px 0}.pitch-label{margin-bottom:-9px}.landing-shell{padding-left:18px;padding-right:18px}.landing-hero{min-height:auto;grid-template-columns:1fr;gap:36px;padding-top:44px;padding-bottom:62px}.landing-hero h1{font-size:48px}.landing-lead{font-size:16px}.landing-visual{transform:none;animation:none}.landing-thesis,.landing-workflow{grid-template-columns:1fr;gap:20px;padding-top:31px;padding-bottom:56px}.workflow-grid{grid-template-columns:1fr;gap:12px}.workflow-grid article{min-height:0;padding-bottom:18px}.proof-panel,.landing-cta{grid-template-columns:1fr;gap:25px}.proof-list{border-left:0;border-top:1px solid #b8c9c4;padding:20px 0 0}.demo-hero{grid-template-columns:1fr;gap:22px;padding-top:38px}.demo-grid{grid-template-columns:1fr}.demo-guide{padding:10px 0}.demo-bottom{align-items:stretch;flex-direction:column}.demo-bottom .button{width:100%} }
 @media print { .topbar,.tabs,.no-print,.footer{display:none!important}.shell{max-width:none;padding:0}.panel{box-shadow:none}.page-head{padding:10px 0 20px}body{background:#fff} }
+
+/* IPC visual system: evidence-room editorial, not glossy SaaS. */
+body { background: #f1f3ef; }
+.topbar { background: rgba(241,243,239,.96); backdrop-filter: blur(8px); box-shadow: none; }
+.brand { letter-spacing: -.035em; }
+.brand-mark { border-radius: 3px 3px 8px 3px; box-shadow: none; }
+.button { border-radius: 4px; box-shadow: none; }
+.button-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 0 rgba(16,47,69,.16); }
+.button-secondary:hover { background: #edf3f0; border-color: #9eb8ad; }
+.panel { border-radius: 4px; box-shadow: none; }
+.badge { border-radius: 4px; }
+.landing-page { background: #f1f3ef; }
+.landing-hero { grid-template-columns: minmax(0,1.18fr) minmax(360px,.82fr); gap: 86px; }
+.landing-hero h1 { max-width: 650px; font-size: clamp(40px,5.2vw,66px); }
+.landing-visual { border-radius: 4px; transform: none; animation: none; box-shadow: 10px 10px 0 rgba(16,47,69,.08); }
+.landing-thesis,.landing-workflow,.proof-panel { border-color: #cbd5d0; }
+.workflow-grid { grid-template-columns: minmax(0,1.35fr) minmax(220px,.8fr); gap: 28px; }
+.workflow-grid article:first-child { grid-row: span 2; min-height: 270px; }
+.workflow-grid article:nth-child(2), .workflow-grid article:nth-child(3) { min-height: 0; }
+.source-quote, .detail { border-radius: 0; }
+.landing-disclaimer { color: #53655e; }
+@media (max-width: 900px) {
+  .landing-hero { gap: 42px; }
+  .workflow-grid { grid-template-columns: 1fr; }
+  .workflow-grid article:first-child { grid-row: auto; min-height: 0; }
+}
