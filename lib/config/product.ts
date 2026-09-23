@@ -18,6 +18,7 @@ export const PRODUCT = {
     dossiers: "/dossiers",
     demo: "/demo",
     pitch: "/pitch",
+    uitleg: "/uitleg",
   },
   features: {
     demoMode: true,
