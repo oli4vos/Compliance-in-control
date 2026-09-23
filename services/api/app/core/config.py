@@ -3,9 +3,11 @@ from functools import lru_cache
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.product import PRODUCT_NAME
+
 
 class Settings(BaseSettings):
-    app_name: str = "IPC API"
+    app_name: str = f"{PRODUCT_NAME} API"
     environment: str = "development"
     database_url: str = "sqlite:///./aantoonbaar-api.db"
     auto_seed_demo: bool = False

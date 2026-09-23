@@ -4,6 +4,19 @@ IPC is een lokale MVP voor Nederlandse IT- en AI-leveranciers die eisen uit aanb
 
 De volledige technische samenhang, huidige risico's en productie-doelarchitectuur staan in [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Centrale configuratielaag
+
+Publieke productcopy staat centraal in [`lib/config/product.ts`](lib/config/product.ts): naam, metadata, disclaimer, demo-identiteit, routes en publieke featureflags. De Python-backend heeft een overeenkomstige [`services/api/app/core/product.py`](services/api/app/core/product.py) voor API-copy. Secrets, database-URL's en runtime-instellingen blijven uitsluitend in Pydantic Settings en `.env.local`.
+
+Deze scheiding maakt later onder meer mogelijk:
+
+- rebranding of white-labeling zonder schermen handmatig af te zoeken;
+- organisatie- of omgeving-specifieke featureflags;
+- consistente disclaimers in UI, API, CSV en afdrukbare exports;
+- gecontroleerde demo-, staging- en productiecopy;
+- centrale navigatie- en routeconfiguratie;
+- een latere configuratie-API of beheerscherm zonder productcopy in componenten te hardcoderen.
+
 > **Architectuurbesluit uitgevoerd:** Python/FastAPI is de enige backend en PostgreSQL is de enige relationele bron van waarheid. Next.js blijft de webinterface en roept de versieerbare Python-API aan via een uit OpenAPI gegenereerd contract.
 
 ## Technologie

@@ -1,4 +1,6 @@
-export const DISCLAIMER = "IPC ondersteunt de voorbereiding en beoordeling van bewijsdossiers. Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving.";
+import { PRODUCT } from "./config/product";
+
+export const DISCLAIMER = PRODUCT.disclaimer;
 
 export const CATEGORIES = ["informatiebeveiliging", "privacy", "AI en algoritmen", "continuïteit", "organisatie en governance", "juridische voorwaarden", "duurzaamheid", "financieel", "overig"];
 export const STATUSES = ["niet beoordeeld", "mogelijk passend", "gedeeltelijk onderbouwd", "voldoende onderbouwd", "onvoldoende onderbouwd", "ontbrekend bewijs", "niet van toepassing"];

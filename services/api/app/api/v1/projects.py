@@ -50,13 +50,10 @@ from app.modules.projects.workspace import (
     update_requirement,
 )
 from app.seed import seed_demo
+from app.core.product import DISCLAIMER
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
-DISCLAIMER = (
-    "IPC ondersteunt de voorbereiding en beoordeling van bewijsdossiers. "
-    "Een voorgestelde koppeling is geen juridisch oordeel, certificering of garantie van naleving."
-)
 
 
 @router.post("/demo/reset", response_model=MutationResult)

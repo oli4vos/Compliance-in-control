@@ -52,6 +52,18 @@ De vaste disclaimer is daarom een domeinonderdeel, geen vrijblijvende UI-tekst:
 10. **Audit is append-only.** Een historische gebeurtenis wordt niet stil gewijzigd of verwijderd.
 11. **Veilig falen.** Een mislukte AI-call valt terug op lokale verwerking, maar de gekozen engine en foutstatus blijven zichtbaar.
 
+## 3a. Centrale product- en runtimeconfiguratie
+
+Publieke productidentiteit en runtimeconfiguratie zijn bewust gescheiden.
+
+- `lib/config/product.ts` is de centrale bron voor Next.js-copy: productnaam, metadata, disclaimer, demo-identiteit, routes en publieke featureflags.
+- `services/api/app/core/product.py` bevat de overeenkomstige API-copy voor OpenAPI, exports en domeinmeldingen.
+- `services/api/app/core/config.py` gebruikt Pydantic Settings voor secrets, database, opslag, AI-provider en omgeving; deze waarden komen uit environment variables en `.env`-bestanden.
+
+Dezelfde productnaam staat daarom voorlopig in twee kleine runtime-lagen: TypeScript en Python kunnen niet veilig rechtstreeks dezelfde module importeren. Een toekomstige monorepo-build kan dit vervangen door een gevalideerd gedeeld JSON-contract. Tot die tijd moet een rebranding beide bestanden in dezelfde change aanpassen.
+
+Deze laag is ook het uitbreidingspunt voor white-labeling, organisatiebranding, omgevingstags, module-flags, demo versus productiecopy, navigatieconfiguratie en later een organisatiebeheerde configuratie-API. Geheimen en tenantdata horen nooit in de publieke productconfiguratie.
+
 ## 4. Systeemcontext
 
 ```mermaid

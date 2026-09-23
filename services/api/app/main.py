@@ -6,13 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.projects import router as projects_router
 from app.core.config import get_settings
+from app.core.product import API_DESCRIPTION
 from app.database import get_db
 
 settings = get_settings()
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description="Python-backend voor de IPC eisen-bewijsmatrix.",
+    description=API_DESCRIPTION,
 )
 
 v1 = APIRouter(prefix="/api/v1")
