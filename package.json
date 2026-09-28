@@ -11,6 +11,7 @@
     "db:setup": "docker compose run --rm --build api alembic upgrade head",
     "seed": "docker compose run --rm api python -m app.seed",
     "test": "vitest run",
+    "test:pages": "node scripts/check-pages.mjs",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "api:generate": "openapi-typescript services/api/openapi.json -o lib/api/schema.d.ts",

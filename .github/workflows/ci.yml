@@ -37,6 +37,7 @@ jobs:
       - run: npm ci
       - run: python -m pip install -e './services/api[dev]'
       - run: npm run typecheck
+      - run: npm run test:pages
       - run: npm test
       - run: python -m ruff check .
         working-directory: services/api

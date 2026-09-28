@@ -13,6 +13,7 @@
       <nav aria-label="Hoofdnavigatie">
         <a href="#voor-wie">Voor wie</a>
         <a href="#werkwijze">Werkwijze</a>
+        <a href="#demo">Live demo</a>
         <a href="#ontzorgen">Ontzorging</a>
         <a class="nav-action" href="https://github.com/oli4vos/Compliance-in-control">Broncode</a>
       </nav>
@@ -37,6 +38,17 @@
         </div>
       </section>
 
+      <section class="demo-section wrap" id="demo">
+        <div class="section-label">Interactieve demo</div>
+        <div class="demo-intro"><div><p class="kicker">Geen screenshot, wel een werkende proef</p><h2>Doorloop een dossier alsof je al begonnen bent.</h2><p>Deze openbare demo gebruikt voorbeelddata in je browser. Je kunt statussen aanpassen, een beoordeling vastleggen en de matrix exporteren. Voor echte uploads, PostgreSQL en private opslag gebruik je de volledige MVP in de repository.</p></div><button class="button button-dark" id="reset-demo" type="button">Demo terugzetten</button></div>
+        <div class="demo-shell" aria-label="Interactieve IPC demo">
+          <div class="demo-topbar"><div><span class="eyebrow">Actief dossier</span><strong>AI-planningssoftware Gemeente Waterdam</strong><small>WD-2026-041 · Planwijzer AI 2.3</small></div><span class="demo-mode">Browserdemo</span></div>
+          <div class="demo-tabs" role="tablist" aria-label="Dossieronderdelen"><button class="demo-tab is-active" data-tab="overview" role="tab" aria-selected="true">Overzicht</button><button class="demo-tab" data-tab="requirements" role="tab" aria-selected="false">Eisen <span>8</span></button><button class="demo-tab" data-tab="evidence" role="tab" aria-selected="false">Bewijs <span>7</span></button><button class="demo-tab" data-tab="matrix" role="tab" aria-selected="false">Matrix</button></div>
+          <div class="demo-content" id="demo-content"></div>
+        </div>
+        <p class="demo-note">Demo-data is fictief. Een status in deze browserdemo is geen juridisch oordeel, certificering of garantie van naleving.</p>
+      </section>
+
       <section class="ruled wrap" id="voor-wie">
         <div class="section-label">Voor wie</div>
         <div><h2>Voor teams die steeds opnieuw moeten aantonen dat hun product zorgvuldig werkt.</h2><div class="audience-grid"><article><span class="index">Leveranciers</span><h3>IT- en AI-leveranciers</h3><p>Beantwoord terugkerende aanbestedingen, securityreviews en klantvragen vanuit één gecontroleerde bewijsbibliotheek.</p></article><article><span class="index">Eigenaars</span><h3>Security, privacy en AI</h3><p>Beoordeel de inhoudelijke aansluiting van bewijs zonder bron, scope of geldigheid uit het oog te verliezen.</p></article><article><span class="index">Dossier</span><h3>Sales en aanbesteding</h3><p>Maak een dossier overdraagbaar zonder juridische zekerheid te suggereren die niet is vastgesteld.</p></article></div></div>
@@ -54,5 +66,6 @@
     </main>
 
     <footer class="site-footer"><span>IPC · lokale MVP voor controleerbare bewijsdossiers</span><a href="https://github.com/oli4vos/Compliance-in-control">GitHub</a></footer>
+    <script src="./github-pages.js" defer></script>
   </body>
 </html>

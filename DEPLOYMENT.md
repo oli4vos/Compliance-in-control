@@ -22,7 +22,7 @@ npm run dev:stack
 
 ## Als GitHub Pages verplicht is
 
-Maak dan een aparte statische investor-site of product-marketingpagina. De interactieve dossier-MVP blijft op de Next.js- en FastAPI-hosting. De statische variant mag geen claims doen over werkende uploads, matching of gegevensopslag als die backend niet beschikbaar is.
+De repository publiceert op GitHub Pages een aparte, interactieve browserdemo. Die demo bevat fictieve dossierdata, tabs, statusbeoordeling, voortgang en CSV-export via `localStorage`; daardoor is de investeerdersflow direct klikbaar zonder server. Uploads, private documentopslag, PostgreSQL, auditlogging en echte matching blijven onderdeel van de volledige Next.js/FastAPI-MVP. De publieke demo maakt dit onderscheid expliciet en claimt geen echte gegevensopslag.
 
 ## Eerste GitHub-stappen
 
