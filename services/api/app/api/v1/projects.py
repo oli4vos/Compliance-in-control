@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.product import DISCLAIMER
 from app.database import get_db
 from app.modules.projects.documents import discard_upload, save_upload
 from app.modules.projects.models import EvidenceDocument
@@ -50,7 +51,6 @@ from app.modules.projects.workspace import (
     update_requirement,
 )
 from app.seed import seed_demo
-from app.core.product import DISCLAIMER
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
