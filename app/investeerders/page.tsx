@@ -8,12 +8,10 @@ export const metadata = {
   description: "De investeerderscase van IPC: probleem, bewijslaag, markttoegang, economie en validatieplan.",
 };
 
-const forecast = [
-  ["Jaar 1", "Pilot en eerste hergebruik", "18", "€ 86k", "€ -74k"],
-  ["Jaar 2", "Herhaalbaar in security en tenders", "65", "€ 364k", "€ -42k"],
-  ["Jaar 3", "Partnerkanaal en teamlicenties", "145", "€ 1,04m", "+ € 182k"],
-  ["Jaar 4", "Portfolio’s en meerdere disciplines", "310", "€ 2,48m", "+ € 690k"],
-  ["Jaar 5", "Categorie voor aantoonbaarheid", "560", "€ 5,04m", "+ € 1,82m"],
+const scenarios = [
+  ["Voorzichtig", "35", "€ 4.800", "€ 168k", "Founders-led verkoop aan gespecialiseerde IT-leveranciers"],
+  ["Basis", "120", "€ 7.200", "€ 864k", "Herhaalbare verkoop via security- en aanbestedingspartners"],
+  ["Opschaling", "275", "€ 9.600", "€ 2,64m", "Teamlicenties, portfolio-hergebruik en partnerkanaal"],
 ];
 
 export default function InvesteerdersPage() {
@@ -35,7 +33,7 @@ export default function InvesteerdersPage() {
 
     <section className="investor-economics" id="economie"><div className="section-head"><div><p className="eyebrow">UNIT ECONOMICS / BASISSCENARIO</p><h2>Omzet groeit met hergebruik, niet met een groter documententeam.</h2></div><p className="section-note">Werkhypothese: jaarlijkse workspace-licentie met team- en partneruitbreiding. Servicesomzet en churn zijn nog niet in deze indicatie opgenomen.</p></div><div className="metric-ribbon"><div><small>Gem. contractwaarde jaar 3</small><strong>€ 7.200</strong><span>per organisatie per jaar</span></div><div><small>Brutomarge-hypothese</small><strong>78%</strong><span>software en lokale extractie</span></div><div><small>Terugkerend hergebruik</small><strong>3,4×</strong><span>doel per bewijsstuk</span></div><div><small>Bijdrage per team</small><strong>€ 18k</strong><span>voor vaste kosten</span></div></div></section>
 
-    <section className="investor-forecast"><div className="forecast-head"><div><p className="eyebrow">VIJFJARENPLAN</p><h2>Een toetsbaar pad naar € 5,0 mln. ARR.</h2><p>Gecontroleerde groei via hergebruik, teams en partnerdistributie.</p></div><div className="scenario-stamp">BASISSCENARIO<br /><b>indicatief</b></div></div><div className="forecast-table-wrap"><table className="forecast-table"><thead><tr><th>Periode</th><th>Focus</th><th>Klanten</th><th>ARR</th><th>Run-rate ruimte</th></tr></thead><tbody>{forecast.map(([year, focus, customers, arr, room]) => <tr key={year}><td><strong>{year}</strong></td><td><small>{focus}</small></td><td>{customers}</td><td className="arr-cell"><b>{arr}</b></td><td className={room.startsWith("+") ? "positive" : "negative"}>{room}</td></tr>)}</tbody></table></div><p className="forecast-footnote">ARR is een indicatieve annualisatie op basis van klanten en gemiddelde contractwaarde. Dit is geen boekhoudkundige winst, waardering of forecast.</p></section>
+    <section className="investor-forecast"><div className="forecast-head"><div><p className="eyebrow">FINANCIËLE POTENTIE / JAAR 3</p><h2>Drie scenario’s om de eerste commerciële fase te toetsen.</h2><p>De rekenregel is eenvoudig: klanten × jaarlijkse contractwaarde = indicatieve ARR.</p></div><div className="scenario-stamp">MANAGEMENTAANNAMES<br /><b>geen forecast</b></div></div><div className="scenario-table"><div className="scenario-table-head"><span>Scenario</span><span>Klanten</span><span>Contractwaarde</span><span>ARR jaar 3</span><span>Verkoopaanname</span></div>{scenarios.map(([name, customers, arpa, arr, note]) => <div className={`scenario-table-row ${name === "Basis" ? "is-focus" : ""}`} key={name}><strong>{name}</strong><span>{customers}</span><span>{arpa}</span><b>{arr}</b><small>{note}</small></div>)}</div><p className="forecast-footnote">Servicesomzet, churn, CAC, supportkosten en implementatiekosten zijn nog niet gemodelleerd. De scenario’s zijn bedoeld om design-partnergesprekken te structureren.</p></section>
 
     <section className="investor-evidence" id="bewijsplan"><div><p className="eyebrow">FASE VAN HET BEDRIJF</p><h2>Werkend productconcept; commerciële aannames nog te bewijzen.</h2></div><dl className="evidence-ledger"><div><dt>Gebouwd</dt><dd>End-to-end demo van intake, eisenextractie, matching, menselijke beoordeling en export.</dd></div><div><dt>Te valideren</dt><dd>Betalingsbereidheid, hergebruik per dossier, reviewtijd en partnerdistributie.</dd></div><div><dt>Investeringspoort</dt><dd>Pas opschalen wanneer klantwaarde én bijdrage per organisatie reproduceerbaar zijn.</dd></div></dl></section>
 
