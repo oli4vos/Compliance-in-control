@@ -35,8 +35,9 @@ jobs:
       - name: Assemble public site
         run: |
           rm -rf _site
-          mkdir -p _site
+          mkdir -p _site/investeerders
           cp index.html github-pages.css github-pages.js _site/
+          cp investor.html investor-pages.css _site/investeerders/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
