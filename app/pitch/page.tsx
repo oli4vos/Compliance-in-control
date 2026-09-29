@@ -1,29 +1,6 @@
-import Link from "next/link";
-import { PRODUCT } from "@/lib/config/product";
+import InvestorPage from "@/app/investeerders/page";
 
 export const dynamic = "force-dynamic";
-export const metadata = {
-  title: `Investeerders | ${PRODUCT.name}`,
-  description: "De investeerderspitch van IPC: de bewijslaag voor IT- en AI-leveranciers.",
-};
+export const metadata = { title: "Investeerderscase | IPC", description: "De investeerderscase van IPC." };
 
-const scenarios = [
-  { name: "Voorzichtig", customers: "35", arpa: "€ 4.800", year3: "€ 168k", note: "Founders-led verkoop aan gespecialiseerde IT-leveranciers" },
-  { name: "Basis", customers: "120", arpa: "€ 7.200", year3: "€ 864k", note: "Herhaalbare verkoop via security- en aanbestedingspartners" },
-  { name: "Opschaling", customers: "275", arpa: "€ 9.600", year3: "€ 2,64m", note: "Teamlicenties, portfolio-hergebruik en partnerkanaal" },
-];
-
-export default function PitchPage() {
-  return <main className="shell pitch-page">
-    <section className="pitch-hero"><div><Link href="/" className="eyebrow">{PRODUCT.name} / investeerdersnotitie</Link><h1 style={{marginTop:14}}>De bewijslaag voor leveranciers die AI willen verkopen aan organisaties.</h1><p>Een lokale MVP die eisen, bewijs en menselijke beoordeling samenbrengt in één dossier dat een sales-, security- en aanbestedingsteam kan gebruiken.</p></div><div className="pitch-hero-aside"><span className="eyebrow">Fase</span><strong>Design-partner validatie</strong><span className="muted">Hypotheses, geen gerealiseerde omzet</span></div></section>
-    <div className="notice warning">De financiële cijfers hieronder zijn scenario’s voor gesprek en planning. Ze zijn geen forecast, waardering of belofte.</div>
-    <section className="pitch-block"><div className="pitch-label">Probleem</div><div><h2>Bewijswerk groeit sneller dan het productteam</h2><p>IT- en AI-leveranciers beantwoorden dezelfde soorten vragen in steeds nieuwe formats. Informatie zit verspreid over policies, auditrapporten, model cards en spreadsheets. De bottleneck is niet alleen schrijven; het is terugvinden, scopen, beoordelen en opnieuw gebruiken.</p><div className="problem-flow"><span>Uitvraag</span><b>→</b><span>Bewijs zoeken</span><b>→</b><span>Scope controleren</span><b>→</b><span>Menselijk dossier</span></div></div></section>
-    <section className="pitch-block"><div className="pitch-label">Product</div><div><h2>{PRODUCT.name} maakt bewijs herbruikbaar</h2><div className="capability-grid"><Capability index="Extractie" title="Eisen extraheren" text="Bronfragmenten blijven gekoppeld aan document en locatie."/><Capability index="Matching" title="Bewijs matchen" text="Voorstellen tonen fragment, score en scopewaarschuwingen."/><Capability index="Besluit" title="Beslissen" text="De menselijke beoordeling staat apart en vormt de voortgang."/></div></div></section>
-    <section className="pitch-block"><div className="pitch-label">Waarom nu</div><div><h2>De vraag naar aantoonbaarheid groeit sneller dan de capaciteit om haar te beantwoorden</h2><p>AI-leveranciers krijgen meer vragen over beveiliging, privacy, modelgebruik en continuïteit. Tegelijk blijven antwoorden verspreid over verschillende teams en documenten. IPC begint bij één concreet dossier en bouwt vandaaruit een herbruikbare bewijslaag.</p><div className="model-line"><div><strong>Meer uitvragen</strong><span>publieke aanbestedingen en securityreviews vragen steeds meer onderbouwing</span></div><div><strong>Meer bewijs</strong><span>beleid, audits en technische uitleg moeten samen op scope worden gecontroleerd</span></div><div><strong>Meer hergebruik</strong><span>een goed beoordeeld bewijsstuk kan meerdere dossiers versnellen</span></div></div></div></section>
-    <section className="pitch-block"><div className="pitch-label">Businessmodel</div><div><h2>Een dossierproduct met uitbreidbare omzet per organisatie</h2><p>Start met één team en één dossier. Breid uit via bewijsbibliotheek, hergebruik over tenders en samenwerking met security-, privacy- en aanbestedingspartners.</p><div className="model-line"><div><strong>Basislicentie</strong><span>workspace + dossierbeheer</span></div><div><strong>Teamlaag</strong><span>reviewers, eigenaars, audit trail</span></div><div><strong>Partnerlaag</strong><span>templates, portfolio en co-selling</span></div></div></div></section>
-    <section className="pitch-block scenario-section"><div className="pitch-label">Financiële potentie</div><div><h2>Indicatieve ARR-scenario’s na drie jaar</h2><p className="muted">Aannames: jaarlijkse contractwaarde per klant, geen servicesomzet, geen churn- of kostenmodel. Gebruik dit als gesprekspaneel voor design partners.</p><div className="scenario-table"><div className="scenario-head"><span>Scenario</span><span>Klanten</span><span>Jaarwaarde</span><span>ARR jaar 3</span></div>{scenarios.map(s=><div className={`scenario-row ${s.name === "Basis" ? "scenario-focus" : ""}`} key={s.name}><strong>{s.name}</strong><span className="mono">{s.customers}</span><span className="mono">{s.arpa}</span><span className="mono scenario-arr">{s.year3}</span><small>{s.note}</small></div>)}</div></div></section>
-    <section className="pitch-ask"><div><div className="eyebrow">Investeringskader</div><h2>Kapitaal voor bewijs, niet voor beloftes</h2><p>De volgende stap is geen brede uitrol. Het is een gecontroleerde design-partnerfase: bewijs dat teams de bibliotheek hergebruiken, dat reviewtijd daalt en dat de dossierkwaliteit stijgt.</p><Link href="/demo" className="button button-primary">Bekijk de interactieve demo</Link></div><div className="ask-list"><div><span className="ask-kicker">Fase 1</span><strong>5–8 design partners</strong><small>IT- en AI-leveranciers met terugkerende uitvragen</small></div><div><span className="ask-kicker">Fase 2</span><strong>Meetbare workflowwaarde</strong><small>tijd tot eerste onderbouwd dossier en hergebruik per bewijsstuk</small></div><div><span className="ask-kicker">Fase 3</span><strong>Productiseerbare wedge</strong><small>van lokaal dossier naar team- en partnerlaag</small></div></div></section>
-    <div className="notice">{PRODUCT.name} is een hulpmiddel voor voorbereiding en beoordeling. Het product claimt geen juridische compliance, certificering of goedkeuring.</div>
-  </main>;
-}
-function Capability({index,title,text}:{index:string;title:string;text:string}){return <article className="capability"><span>{index}</span><h3>{title}</h3><p>{text}</p></article>}
+export default InvestorPage;
