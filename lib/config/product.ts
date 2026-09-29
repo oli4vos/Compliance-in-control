@@ -17,7 +17,7 @@ export const PRODUCT = {
   routes: {
     dossiers: "/dossiers",
     demo: "/demo",
-    pitch: "/pitch",
+    pitch: "/investeerders",
     uitleg: "/uitleg",
   },
   features: {
